@@ -14,7 +14,7 @@ with open(os.path.join(here, 'README.rst')) as f:
     
 setup(
     name="python-units",
-    version="0.1.0",
+    version="0.1.1",
     author="Paul K. Korir, PhD",
     author_email = "paul.korir@gmail.com",
     url="https://gitlab.paulkorir.com/paulkorir/units",
