@@ -300,64 +300,64 @@ class Unit(object):
     def __mul__(self, unit2):
         if isinstance(unit2, Unit):
             return Unit(self.value * unit2.value, self.unit * unit2.unit)
-        elif isinstance(unit2, int) or isinstance(uint2, float) or isinstance(unit2, long) or isinstance(unit2, complex) or isinstance(unit2, oct) or isinstance(unit2, hex):
+        elif isinstance(unit2, int) or isinstance(unit2, float) or isinstance(unit2, long) or isinstance(unit2, complex) or isinstance(unit2, oct) or isinstance(unit2, hex):
             return Unit(self.value * unit2, self.unit)
         # else:
         #     raise UnitOperandError('not object of type unit: {}'.format(type(unit2)))
     def __rmul__(self, unit2):
         if isinstance(unit2, Unit):
             return Unit(self.value * unit2.value, self.unit * unit2.unit)
-        elif isinstance(unit2, int) or isinstance(uint2, float) or isinstance(unit2, long) or isinstance(unit2, complex) or isinstance(unit2, oct) or isinstance(unit2, hex):
+        elif isinstance(unit2, int) or isinstance(unit2, float) or isinstance(unit2, long) or isinstance(unit2, complex) or isinstance(unit2, oct) or isinstance(unit2, hex):
             return Unit(self.value * unit2, self.unit)
         # else:
         #     raise UnitOperandError('not object of type unit: {}'.format(type(unit2)))
     def __div__(self, unit2):
         if isinstance(unit2, Unit):
             return Unit(self.value / unit2.value, self.unit / unit2.unit)
-        elif isinstance(unit2, int) or isinstance(uint2, float) or isinstance(unit2, long) or isinstance(unit2, complex) or isinstance(unit2, oct) or isinstance(unit2, hex):
+        elif isinstance(unit2, int) or isinstance(unit2, float) or isinstance(unit2, long) or isinstance(unit2, complex) or isinstance(unit2, oct) or isinstance(unit2, hex):
             return Unit(self.value / unit2, self.unit)
         # else:
         #     raise UnitOperandError('not object of type unit: {}'.format(type(unit2)))
     def __rdiv__(self, unit2):
         if isinstance(unit2, Unit):
             return Unit(unit2.value / self.value, self.unit / unit2.unit)
-        elif isinstance(unit2, int) or isinstance(uint2, float) or isinstance(unit2, long) or isinstance(unit2, complex) or isinstance(unit2, oct) or isinstance(unit2, hex):
+        elif isinstance(unit2, int) or isinstance(unit2, float) or isinstance(unit2, long) or isinstance(unit2, complex) or isinstance(unit2, oct) or isinstance(unit2, hex):
             return Unit(unit2 / self.value, SIUnit() / self.unit)
         # else:
         #     raise UnitOperandError('not object of type unit: {}'.format(type(unit2)))
     def __truediv__(self, unit2):
         if isinstance(unit2, Unit):
             return Unit(self.value / unit2.value, self.unit / unit2.unit)
-        elif isinstance(unit2, int) or isinstance(uint2, float) or isinstance(unit2, long) or isinstance(unit2, complex) or isinstance(unit2, oct) or isinstance(unit2, hex):
+        elif isinstance(unit2, int) or isinstance(unit2, float) or isinstance(unit2, long) or isinstance(unit2, complex) or isinstance(unit2, oct) or isinstance(unit2, hex):
             return Unit(self.value / unit2, self.unit)
         # else:
         #     raise UnitOperandError('not object of type unit: {}'.format(type(unit2)))
     def __rtruediv__(self, unit2):
         if isinstance(unit2, Unit):
             return Unit(unit2.value / self.value, self.unit / unit2.unit)
-        elif isinstance(unit2, int) or isinstance(uint2, float) or isinstance(unit2, long) or isinstance(unit2, complex) or isinstance(unit2, oct) or isinstance(unit2, hex):
+        elif isinstance(unit2, int) or isinstance(unit2, float) or isinstance(unit2, long) or isinstance(unit2, complex) or isinstance(unit2, oct) or isinstance(unit2, hex):
             return Unit(unit2 / self.value, SIUnit() / self.unit)
         # else:
         #     raise UnitOperandError('not object of type unit: {}'.format(type(unit2)))
     def __floordiv__(self, unit2):
         if isinstance(unit2, Unit):
             return Unit(self.value // unit2.value, self.unit / unit2.unit)
-        elif isinstance(unit2, int) or isinstance(uint2, float) or isinstance(unit2, long) or isinstance(unit2, complex) or isinstance(unit2, oct) or isinstance(unit2, hex):
+        elif isinstance(unit2, int) or isinstance(unit2, float) or isinstance(unit2, long) or isinstance(unit2, complex) or isinstance(unit2, oct) or isinstance(unit2, hex):
             return Unit(self.value // unit2, self.unit)
     def __rfloordiv__(self, unit2):
         if isinstance(unit2, Unit):
             return Unit(unit2.value // self.value, unit2.unit / self.unit)
-        elif isinstance(unit2, int) or isinstance(uint2, float) or isinstance(unit2, long) or isinstance(unit2, complex) or isinstance(unit2, oct) or isinstance(unit2, hex):
+        elif isinstance(unit2, int) or isinstance(unit2, float) or isinstance(unit2, long) or isinstance(unit2, complex) or isinstance(unit2, oct) or isinstance(unit2, hex):
             return Unit(unit2 // self.value, SIUnit() / self.unit)
     def __mod__(self, unit2):
         if isinstance(unit2, Unit):
             return Unit(self.value % unit2.value, self.unit / unit2.unit)
-        elif isinstance(unit2, int) or isinstance(uint2, float) or isinstance(unit2, long) or isinstance(unit2, complex) or isinstance(unit2, oct) or isinstance(unit2, hex):
+        elif isinstance(unit2, int) or isinstance(unit2, float) or isinstance(unit2, long) or isinstance(unit2, complex) or isinstance(unit2, oct) or isinstance(unit2, hex):
             return Unit(self.value % unit2, self.unit)
     def __rmod__(self, unit2):
         if isinstance(unit2, Unit):
             return Unit(unit2.value % self.value, unit2.unit / self.unit)
-        elif isinstance(unit2, int) or isinstance(uint2, float) or isinstance(unit2, long) or isinstance(unit2, complex) or isinstance(unit2, oct) or isinstance(unit2, hex):
+        elif isinstance(unit2, int) or isinstance(unit2, float) or isinstance(unit2, long) or isinstance(unit2, complex) or isinstance(unit2, oct) or isinstance(unit2, hex):
             return Unit(unit2 % self.value, SIUnit() / self.unit)
     def __divmod__(self, unit2):
         return self.__floordiv__(unit2), self.__mod__(unit2)
