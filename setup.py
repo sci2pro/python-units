@@ -13,10 +13,11 @@ with open(os.path.join(here, 'README.rst')) as f:
     long_description = f.read()
     
 setup(
-    name="units",
-    version="0.1a1",
-    author="Paul K. Korir",
+    name="python-units",
+    version="0.1.0",
+    author="Paul K. Korir, PhD",
     author_email = "paul.korir@gmail.com",
+    url="https://gitlab.paulkorir.com/paulkorir/units",
     description="Python library to represent numbers with units",
     long_description=long_description,
     license="GNU GPL v3.0",
