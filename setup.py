@@ -14,10 +14,10 @@ with open(os.path.join(here, 'README.rst')) as f:
     
 setup(
     name="python-units",
-    version="0.1.2",
+    version="0.1.2.post0",
     author="Paul K. Korir, PhD",
     author_email = "paul.korir@gmail.com",
-    url="https://gitlab.paulkorir.com/paulkorir/units",
+    url="https://bacculus.dev/paulkorir/units",
     description="Python library to represent numbers with units",
     long_description=long_description,
     license="GNU GPL v3.0",
