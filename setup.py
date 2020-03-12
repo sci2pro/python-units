@@ -6,7 +6,7 @@ __email__ = "paul.korir@gmail.com"
 __date__ = "2017-06-02"
 
 import os
-from setuptools import setup
+from setuptools import setup, find_packages
 
 here = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(here, 'README.rst')) as f:
@@ -14,6 +14,7 @@ with open(os.path.join(here, 'README.rst')) as f:
     
 setup(
     name="python-units",
+    packages=find_packages(),
     version="0.1.2.post0",
     author="Paul K. Korir, PhD",
     author_email = "paul.korir@gmail.com",
