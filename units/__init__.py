@@ -18,14 +18,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 :TODO: add multipliers
 """
-from __future__ import division
+from __future__ import division, print_function
 
 import sys
 
-
-__author__  = "Paul K. Korir"
-__email__   = "paul.korir@gmail.com"
-__date__    = "2017-06-01"
+__author__ = "Paul K. Korir"
+__email__ = "paul.korir@gmail.com"
+__date__ = "2017-06-01"
 
 """
 :TODO: methods to add
@@ -65,17 +64,20 @@ object.__hex__(self)
 currency and special cases e.g. £ 32 per person instead of 32 £·person^-1 !!!
 """
 
+
 class UnitsError(Exception):
     """Units Error exception
     
     Raised when an operation improperly uses units
     """
+
     def __init__(self, *args, **kwargs):
         super(UnitsError, self).__init__(*args, **kwargs)
 
 
 class BaseUnit(object):
     """Base class"""
+
     def __init__(self):
         self.__unit_dict = {
             'A': 0,
@@ -85,7 +87,8 @@ class BaseUnit(object):
             'm': 0,
             'mol': 0,
             's': 0,
-            }
+        }
+
     @property
     def unit_dict(self):
         """A dictionary to hold base units
@@ -93,33 +96,39 @@ class BaseUnit(object):
         The base units are the Systeme International (SI) units 
         """
         return self.__unit_dict
+
     @unit_dict.setter
     def unit_dict(self, unit_dict):
         self.__unit_dict = unit_dict
+
     def __eq__(self, unit2):
         if self.unit_dict == unit2.unit_dict:
             return True
         else:
             return False
+
     def __mul__(self, unit2):
         result_unit = self.__class__()
         for unit_name in self.unit_dict:
             result_unit.unit_dict[unit_name] = self.unit_dict[unit_name] + unit2.unit_dict[unit_name]
         return result_unit
+
     def __div__(self, unit2):
         result_unit = self.__class__()
         for unit_name in self.unit_dict:
-            result_unit.unit_dict[unit_name] = self.unit_dict[unit_name] - unit2.unit_dict[unit_name] 
+            result_unit.unit_dict[unit_name] = self.unit_dict[unit_name] - unit2.unit_dict[unit_name]
         return result_unit
+
     def __truediv__(self, unit2):
         result_unit = self.__class__()
         for unit_name in self.unit_dict:
-            result_unit.unit_dict[unit_name] = self.unit_dict[unit_name] - unit2.unit_dict[unit_name] 
+            result_unit.unit_dict[unit_name] = self.unit_dict[unit_name] - unit2.unit_dict[unit_name]
         return result_unit
+
     def __str__(self):
         unit_string = list()
         # string = ''
-        for k,v in self.unit_dict.iteritems():
+        for k, v in self.unit_dict.items():
             if v == 0:
                 continue
             elif v == 1:
@@ -133,8 +142,10 @@ class BaseUnit(object):
 
 class SIUnit(BaseUnit):
     """Template class for SI units"""
+
     def __init__(self, *args, **kwargs):
         super(SIUnit, self).__init__(*args, **kwargs)
+
     @classmethod
     def define(cls, key, value=1):
         """Constructor to define an SI unit
@@ -150,24 +161,29 @@ class SIUnit(BaseUnit):
         assert isinstance(value, int)
         obj.unit_dict[key] = value
         return obj
-    
+
 
 class DerivedUnit(BaseUnit):
     """Class for units derived from SI units"""
+
     def __init__(self, *args, **kwargs):
         super(DerivedUnit, self).__init__(*args, **kwargs)
         self.__name = None
+
     @property
     def name(self):
         """Unit name"""
         return self.__name
+
     @name.setter
     def name(self, name):
         self.__name = name
+
     @property
     def full_units(self):
         """The unit in terms of SI units"""
         return super(DerivedUnit, self).__str__()
+
     @classmethod
     def define(cls, name, unit):
         """Constructor to define an SI unit
@@ -185,15 +201,16 @@ class DerivedUnit(BaseUnit):
         obj.name = name
         obj.unit_dict = unit.unit_dict
         return obj
+
     def __str__(self):
         return self.name
-    
+
 
 class UnitOperandError(Exception):
     """Error due to wrong application of operands"""
+
     def __init__(self, *args, **kwargs):
         super(UnitOperandError, self).__init__(*args, **kwargs)
-
 
 
 # SI units
@@ -232,28 +249,35 @@ katal = DerivedUnit.define('kat', mole / second)
 
 class Unit(object):
     """Class to create unit-aware numbers"""
+
     def __init__(self, value, unit=None):
         assert isinstance(unit, BaseUnit) or unit is None
-        assert isinstance(value, int) or isinstance(value, float) or isinstance(value, complex) or isinstance(value, long)# long, double? etc. 
+        assert isinstance(value, int) or isinstance(value, float) or isinstance(value, complex) or isinstance(value,
+                                                                                                              long)  # long, double? etc.
         self.__value = value
         self.__unit = unit
+
     @property
     def value(self):
         """Numeric value"""
         return self.__value
+
     @value.setter
     def value(self, value):
         self.__value = value
+
     @property
     def unit(self):
         """Unit"""
         return self.__unit
+
     @unit.setter
     def unit(self, unit):
         if isinstance(unit, unit):
             self.__unit = unit
         else:
             raise UnitsError('units mismatch: {} and {}'.format(self.unit, type(unit)))
+
     @property
     def full_units(self):
         """Derived units in terms of SI units
@@ -263,10 +287,10 @@ class Unit(object):
         ::
         
             # pascal
-            print Unit(758, pascal)
-            print Unit(758, pascal).full_units
+            print(Unit(758, pascal))
+            print(Unit(758, pascal).full_units)
         
-        will print 
+        will print()
         
         ::
         
@@ -277,6 +301,7 @@ class Unit(object):
             return '{} {}'.format(self.value, self.__unit.full_units)
         else:
             return '{} {}'.format(self.value, self.__unit)
+
     def __add__(self, unit2):
         if isinstance(unit2, Unit):
             if self.unit == unit2.unit:
@@ -285,8 +310,10 @@ class Unit(object):
                 raise UnitsError('units mismatch: {} and {}'.format(self.unit, unit2.unit))
         else:
             raise UnitOperandError('not object of type unit: {}'.format(type(unit2)))
+
     def __radd__(self, unit2):
         return self.__add__(unit2)
+
     def __sub__(self, unit2):
         if isinstance(unit2, Unit):
             if self.unit == unit2.unit:
@@ -295,88 +322,129 @@ class Unit(object):
                 raise UnitsError('units mismatch: {} and {}'.format(self.unit, unit2.unit))
         else:
             raise UnitOperandError('not object of type unit: {}'.format(type(unit2)))
+
     def __rsub__(self, unit2):
         return self.__sub__(unit2)
+
     def __mul__(self, unit2):
         if isinstance(unit2, Unit):
             return Unit(self.value * unit2.value, self.unit * unit2.unit)
-        elif isinstance(unit2, int) or isinstance(unit2, float) or isinstance(unit2, long) or isinstance(unit2, complex) or isinstance(unit2, oct) or isinstance(unit2, hex):
+        elif isinstance(unit2, int) or isinstance(unit2, float) or isinstance(unit2, long) or isinstance(unit2,
+                                                                                                         complex) or isinstance(
+            unit2, oct) or isinstance(unit2, hex):
             return Unit(self.value * unit2, self.unit)
         # else:
         #     raise UnitOperandError('not object of type unit: {}'.format(type(unit2)))
+
     def __rmul__(self, unit2):
         if isinstance(unit2, Unit):
             return Unit(self.value * unit2.value, self.unit * unit2.unit)
-        elif isinstance(unit2, int) or isinstance(unit2, float) or isinstance(unit2, long) or isinstance(unit2, complex) or isinstance(unit2, oct) or isinstance(unit2, hex):
+        elif isinstance(unit2, int) or isinstance(unit2, float) or isinstance(unit2, long) or isinstance(unit2,
+                                                                                                         complex) or isinstance(
+            unit2, oct) or isinstance(unit2, hex):
             return Unit(self.value * unit2, self.unit)
         # else:
         #     raise UnitOperandError('not object of type unit: {}'.format(type(unit2)))
+
     def __div__(self, unit2):
         if isinstance(unit2, Unit):
             return Unit(self.value / unit2.value, self.unit / unit2.unit)
-        elif isinstance(unit2, int) or isinstance(unit2, float) or isinstance(unit2, long) or isinstance(unit2, complex) or isinstance(unit2, oct) or isinstance(unit2, hex):
+        elif isinstance(unit2, int) or isinstance(unit2, float) or isinstance(unit2, long) or isinstance(unit2,
+                                                                                                         complex) or isinstance(
+            unit2, oct) or isinstance(unit2, hex):
             return Unit(self.value / unit2, self.unit)
         # else:
         #     raise UnitOperandError('not object of type unit: {}'.format(type(unit2)))
+
     def __rdiv__(self, unit2):
         if isinstance(unit2, Unit):
             return Unit(unit2.value / self.value, self.unit / unit2.unit)
-        elif isinstance(unit2, int) or isinstance(unit2, float) or isinstance(unit2, long) or isinstance(unit2, complex) or isinstance(unit2, oct) or isinstance(unit2, hex):
+        elif isinstance(unit2, int) or isinstance(unit2, float) or isinstance(unit2, long) or isinstance(unit2,
+                                                                                                         complex) or isinstance(
+            unit2, oct) or isinstance(unit2, hex):
             return Unit(unit2 / self.value, SIUnit() / self.unit)
         # else:
         #     raise UnitOperandError('not object of type unit: {}'.format(type(unit2)))
+
     def __truediv__(self, unit2):
         if isinstance(unit2, Unit):
             return Unit(self.value / unit2.value, self.unit / unit2.unit)
-        elif isinstance(unit2, int) or isinstance(unit2, float) or isinstance(unit2, long) or isinstance(unit2, complex) or isinstance(unit2, oct) or isinstance(unit2, hex):
+        elif isinstance(unit2, int) or isinstance(unit2, float) or isinstance(unit2, long) or isinstance(unit2,
+                                                                                                         complex) or isinstance(
+            unit2, oct) or isinstance(unit2, hex):
             return Unit(self.value / unit2, self.unit)
         # else:
         #     raise UnitOperandError('not object of type unit: {}'.format(type(unit2)))
+
     def __rtruediv__(self, unit2):
         if isinstance(unit2, Unit):
             return Unit(unit2.value / self.value, self.unit / unit2.unit)
-        elif isinstance(unit2, int) or isinstance(unit2, float) or isinstance(unit2, long) or isinstance(unit2, complex) or isinstance(unit2, oct) or isinstance(unit2, hex):
+        elif isinstance(unit2, int) or isinstance(unit2, float) or isinstance(unit2, long) or isinstance(unit2,
+                                                                                                         complex) or isinstance(
+            unit2, oct) or isinstance(unit2, hex):
             return Unit(unit2 / self.value, SIUnit() / self.unit)
         # else:
         #     raise UnitOperandError('not object of type unit: {}'.format(type(unit2)))
+
     def __floordiv__(self, unit2):
         if isinstance(unit2, Unit):
             return Unit(self.value // unit2.value, self.unit / unit2.unit)
-        elif isinstance(unit2, int) or isinstance(unit2, float) or isinstance(unit2, long) or isinstance(unit2, complex) or isinstance(unit2, oct) or isinstance(unit2, hex):
+        elif isinstance(unit2, int) or isinstance(unit2, float) or isinstance(unit2, long) or isinstance(unit2,
+                                                                                                         complex) or isinstance(
+            unit2, oct) or isinstance(unit2, hex):
             return Unit(self.value // unit2, self.unit)
+
     def __rfloordiv__(self, unit2):
         if isinstance(unit2, Unit):
             return Unit(unit2.value // self.value, unit2.unit / self.unit)
-        elif isinstance(unit2, int) or isinstance(unit2, float) or isinstance(unit2, long) or isinstance(unit2, complex) or isinstance(unit2, oct) or isinstance(unit2, hex):
+        elif isinstance(unit2, int) or isinstance(unit2, float) or isinstance(unit2, long) or isinstance(unit2,
+                                                                                                         complex) or isinstance(
+            unit2, oct) or isinstance(unit2, hex):
             return Unit(unit2 // self.value, SIUnit() / self.unit)
+
     def __mod__(self, unit2):
         if isinstance(unit2, Unit):
             return Unit(self.value % unit2.value, self.unit / unit2.unit)
-        elif isinstance(unit2, int) or isinstance(unit2, float) or isinstance(unit2, long) or isinstance(unit2, complex) or isinstance(unit2, oct) or isinstance(unit2, hex):
+        elif isinstance(unit2, int) or isinstance(unit2, float) or isinstance(unit2, long) or isinstance(unit2,
+                                                                                                         complex) or isinstance(
+            unit2, oct) or isinstance(unit2, hex):
             return Unit(self.value % unit2, self.unit)
+
     def __rmod__(self, unit2):
         if isinstance(unit2, Unit):
             return Unit(unit2.value % self.value, unit2.unit / self.unit)
-        elif isinstance(unit2, int) or isinstance(unit2, float) or isinstance(unit2, long) or isinstance(unit2, complex) or isinstance(unit2, oct) or isinstance(unit2, hex):
+        elif isinstance(unit2, int) or isinstance(unit2, float) or isinstance(unit2, long) or isinstance(unit2,
+                                                                                                         complex) or isinstance(
+            unit2, oct) or isinstance(unit2, hex):
             return Unit(unit2 % self.value, SIUnit() / self.unit)
+
     def __divmod__(self, unit2):
         return self.__floordiv__(unit2), self.__mod__(unit2)
+
     def __rdivmod__(self, unit2):
         return self.__rfloordiv__(unit2), self.__rmod__(unit2)
+
     def __neg__(self):
         return Unit(-self.value, self.unit)
+
     def __pos__(self):
         return Unit(+self.value, self.unit)
+
     def __abs__(self):
         return Unit(abs(self.value), self.unit)
+
     def __complex__(self):
         raise TypeError('invalid conversion from Unit object to complex')
+
     def __int__(self):
         raise TypeError('invalid conversion from Unit object to int')
+
     def __float__(self):
         raise TypeError('invalid conversion from Unit object to float')
+
     def __long__(self):
         raise TypeError('invalid conversion from Unit object to long')
+
     def __str__(self):
         return '{} {}'.format(self.value, self.__unit).strip(' ')
     # def __repr__(self):
@@ -393,6 +461,7 @@ def int_unit(unit):
     """
     return Unit(int(unit.value), unit.unit)
 
+
 def float_unit(unit):
     """Convert a Unit object to have an float
 
@@ -403,6 +472,7 @@ def float_unit(unit):
     """
     return Unit(float(unit.value), unit.unit)
 
+
 def long_unit(unit):
     """Convert a Unit object to have a long
 
@@ -412,6 +482,7 @@ def long_unit(unit):
     :rtype unit: Unit
     """
     return Unit(int(unit.value), unit.unit)
+
 
 def complex_unit(unit):
     """Convert a Unit object to have an integer
@@ -424,38 +495,38 @@ def complex_unit(unit):
     return Unit(complex(unit.value), unit.unit)
 
 
-
 def main():
     x = Unit(1, metre)
     y = Unit(2, metre)
-    print x
-    print x + y
-    print x * y
-    print x / y
+    print(x)
+    print(x + y)
+    print(x * y)
+    print(x / y)
     z = Unit(3, second)
-    print x / z
+    print(x / z)
     i = Unit(5.7, ampere)
-    print z * i
-    print Unit(272.93, kilogram * metre / second / second)
-    print Unit(20.232, kilogram * metre * metre / second / second / ampere)
-    print Unit(272.93, kilogram * metre / second / second) * Unit(20.232, kilogram * metre * metre / second / second / ampere)
+    print(z * i)
+    print(Unit(272.93, kilogram * metre / second / second))
+    print(Unit(20.232, kilogram * metre * metre / second / second / ampere))
+    print(Unit(272.93, kilogram * metre / second / second) * Unit(20.232,
+                                                                  kilogram * metre * metre / second / second / ampere))
     k = Unit(392.22, hertz)
-    print k
-    print k.full_units
+    print(k)
+    print(k.full_units)
     j = Unit(29302.33, SIUnit() / second)
-    print j
+    print(j)
     F = Unit(93.39, newton)
-    print F
-    print F.full_units
+    print(F)
+    print(F.full_units)
     P = Unit(758, pascal)
-    print P
-    print P.full_units
-    print Unit(93, becquerel).full_units
-    print Unit(20, katal).full_units
-    print 2 * Unit(30, metre) 
-    print 2 / Unit(20, metre)
-    print Unit(20, metre) / 2
-    print Unit(37.7, degree_celcius)
+    print(P)
+    print(P.full_units)
+    print(Unit(93, becquerel).full_units)
+    print(Unit(20, katal).full_units)
+    print(2 * Unit(30, metre))
+    print(2 / Unit(20, metre))
+    print(Unit(20, metre) / 2)
+    print(Unit(37.7, degree_celcius))
     return 0
 
 

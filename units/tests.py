@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from __future__ import division
 """
 units.tests
 A Python library to represent numbers with units.
@@ -16,14 +15,17 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from __future__ import division, print_function
 
-__author__    = "Paul K. Korir, PhD"
-__email__     = "paul.korir@gmail.com"
-__date__      = "2017-06-02"
+__author__ = "Paul K. Korir, PhD"
+__email__ = "paul.korir@gmail.com"
+__date__ = "2017-06-02"
 
-import unittest
-from __init__ import *
 import random
+import unittest
+
+from units import *
+
 
 class TestUnits(unittest.TestCase):
     def test_SIUnits(self):
@@ -36,6 +38,7 @@ class TestUnits(unittest.TestCase):
         self.assertEqual(str(Unit(rint, candela)), '{} cd'.format(rint))
         self.assertEqual(str(Unit(rint, ampere)), '{} A'.format(rint))
         self.assertEqual(str(Unit(rint, mole)), '{} mol'.format(rint))
+
     def test_DerivedUnits(self):
         """Tests on derived units"""
         rint = random.randint(1, 100)
@@ -61,6 +64,7 @@ class TestUnits(unittest.TestCase):
         self.assertEqual(str(Unit(rint, gray)), '{} Gy'.format(rint))
         self.assertEqual(str(Unit(rint, sievert)), '{} Sv'.format(rint))
         self.assertEqual(str(Unit(rint, katal)), '{} kat'.format(rint))
+
     def test_Unit(self):
         """Test on the Unit class"""
         rint = random.randint(1, 100)
@@ -68,6 +72,7 @@ class TestUnits(unittest.TestCase):
         self.assertEqual(x.value, rint)
         self.assertEqual(str(x.unit), 'm')
         self.assertEqual(str(x.full_units), '{} m'.format(rint))
+
     def test_scalars(self):
         """Test multiplication or division by a scalar"""
         rint = random.randint(1, 100)
@@ -77,6 +82,7 @@ class TestUnits(unittest.TestCase):
         z = x / rint2
         self.assertEqual(str(y), '{} m'.format(rint * rint2))
         self.assertEqual(str(z), '{} m'.format(rint / rint2))
+
     def test_invalid_operations(self):
         """Test operations that would fail e.g. addition of different units"""
         rnum = random.random()
@@ -86,8 +92,9 @@ class TestUnits(unittest.TestCase):
             int(Unit(rnum, metre))
         with self.assertRaises(TypeError):
             float(Unit(rnum, metre))
-        with self.assertRaises(TypeError):
-            long(Unit(rnum, metre))
+        # with self.assertRaises(TypeError):
+        #     long(Unit(rnum, metre))
+
     def test_unary_operators(self):
         """Test unary operators"""
         rint = random.randint(1, 100)
@@ -99,6 +106,7 @@ class TestUnits(unittest.TestCase):
         self.assertEqual(str(+y), '{} m'.format(-rint))
         self.assertEqual(str(abs(x)), '{} m'.format(abs(rint)))
         self.assertEqual(str(abs(y)), '{} m'.format(abs(-rint)))
+
     def test_operations(self):
         """Test operations of the form Unit <operation> OtherUnit"""
         rnum1 = random.random() * 10
@@ -110,16 +118,16 @@ class TestUnits(unittest.TestCase):
 
         self.assertEqual(str(x - y), '{} m'.format(rnum1 - rnum2))
         self.assertEqual(str(y - x), '{} m'.format(rnum2 - rnum1))
-        
+
         self.assertEqual(str(x * y), '{} m^2'.format(rnum1 * rnum2))
         self.assertEqual(str(y * x), '{} m^2'.format(rnum2 * rnum1))
-        
+
         self.assertEqual(str(x / y), '{}'.format(rnum1 / rnum2))
         self.assertEqual(str(y / x), '{}'.format(rnum2 / rnum1))
-        
+
         self.assertEqual(str(x // y), '{}'.format(rnum1 // rnum2))
         self.assertEqual(str(y // x), '{}'.format(rnum2 // rnum1))
-        
+
         self.assertEqual(str(x % y), '{}'.format(rnum1 % rnum2))
         self.assertEqual(str(y % x), '{}'.format(rnum2 % rnum1))
 
@@ -130,13 +138,14 @@ class TestUnits(unittest.TestCase):
         c, d = divmod(y, x)
         self.assertEqual(str(c), '{}'.format(rnum2 // rnum1))
         self.assertEqual(str(d), '{}'.format(rnum2 % rnum1))
+
     def test_type_conversions(self):
         """Test conversion functions"""
         rnum = random.random() * 10
         rint = random.randint(1, 100)
         self.assertEqual(str(int_unit(Unit(rnum, metre))), '{} m'.format(int(rnum)))
         self.assertEqual(str(float_unit(Unit(rint, metre))), '{} m'.format(float(rint)))
-        self.assertEqual(str(long_unit(Unit(rnum, metre))), '{} m'.format(long(rnum)))
+        # self.assertEqual(str(long_unit(Unit(rnum, metre))), '{} m'.format(long(rnum)))
         self.assertEqual(str(complex_unit(Unit(rnum, metre))), '{} m'.format(complex(rnum)))
 
 
