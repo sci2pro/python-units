@@ -16,13 +16,17 @@ with open(os.path.join(here, 'README.rst')) as f:
 setup(
     name="python-units",
     packages=find_packages(),
-    version="0.1.2.post1",
+    version="0.1.3",
     author="Paul K. Korir, PhD",
     author_email="paul.korir@gmail.com",
-    url="https://bacculus.dev/paulkorir/units",
+    url="https://bacculus.dev/paulkorir/python-units",
     description="Python library to represent numbers with units",
     long_description=long_description,
     long_description_content_type='text/x-rst; charset=UTF-8',
     license="GNU GPL v3.0",
     keywords="units",
+    classifiers=[
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3"
+    ]
 )

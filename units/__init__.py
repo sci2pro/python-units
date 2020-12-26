@@ -64,6 +64,11 @@ object.__hex__(self)
 currency and special cases e.g. £ 32 per person instead of 32 £·person^-1 !!!
 """
 
+if sys.version_info[0] >= 3:
+    long = int
+else:
+    pass
+
 
 class UnitsError(Exception):
     """Units Error exception
@@ -79,7 +84,7 @@ class BaseUnit(object):
     """Base class"""
 
     def __init__(self):
-        self.__unit_dict = {
+        self._unit_dict = {
             'A': 0,
             'cd': 0,
             'K': 0,
@@ -95,11 +100,11 @@ class BaseUnit(object):
         
         The base units are the Systeme International (SI) units 
         """
-        return self.__unit_dict
+        return self._unit_dict
 
     @unit_dict.setter
     def unit_dict(self, unit_dict):
-        self.__unit_dict = unit_dict
+        self._unit_dict = unit_dict
 
     def __eq__(self, unit2):
         if self.unit_dict == unit2.unit_dict:
@@ -168,16 +173,16 @@ class DerivedUnit(BaseUnit):
 
     def __init__(self, *args, **kwargs):
         super(DerivedUnit, self).__init__(*args, **kwargs)
-        self.__name = None
+        self._name = None
 
     @property
     def name(self):
         """Unit name"""
-        return self.__name
+        return self._name
 
     @name.setter
     def name(self, name):
-        self.__name = name
+        self._name = name
 
     @property
     def full_units(self):
@@ -203,7 +208,9 @@ class DerivedUnit(BaseUnit):
         return obj
 
     def __str__(self):
-        return self.name
+        if self.name:
+            return self.name
+        return self.full_units
 
 
 class UnitOperandError(Exception):
@@ -252,29 +259,28 @@ class Unit(object):
 
     def __init__(self, value, unit=None):
         assert isinstance(unit, BaseUnit) or unit is None
-        assert isinstance(value, int) or isinstance(value, float) or isinstance(value, complex) or isinstance(value,
-                                                                                                              long)  # long, double? etc.
-        self.__value = value
-        self.__unit = unit
+        assert isinstance(value, int) or isinstance(value, float) or isinstance(value, complex) or isinstance(value, long)  # long, double? etc.
+        self._value = value
+        self._unit = unit
 
     @property
     def value(self):
         """Numeric value"""
-        return self.__value
+        return self._value
 
     @value.setter
     def value(self, value):
-        self.__value = value
+        self._value = value
 
     @property
     def unit(self):
         """Unit"""
-        return self.__unit
+        return self._unit
 
     @unit.setter
     def unit(self, unit):
         if isinstance(unit, unit):
-            self.__unit = unit
+            self._unit = unit
         else:
             raise UnitsError('units mismatch: {} and {}'.format(self.unit, type(unit)))
 
@@ -297,10 +303,10 @@ class Unit(object):
             758 Pa
             758 kg·m^-1·s^-2
         """
-        if not isinstance(self.__unit, SIUnit):
-            return '{} {}'.format(self.value, self.__unit.full_units)
+        if not isinstance(self._unit, SIUnit):
+            return '{} {}'.format(self.value, self._unit.full_units)
         else:
-            return '{} {}'.format(self.value, self.__unit)
+            return '{} {}'.format(self.value, self._unit)
 
     def __add__(self, unit2):
         if isinstance(unit2, Unit):
@@ -329,9 +335,9 @@ class Unit(object):
     def __mul__(self, unit2):
         if isinstance(unit2, Unit):
             return Unit(self.value * unit2.value, self.unit * unit2.unit)
-        elif isinstance(unit2, int) or isinstance(unit2, float) or isinstance(unit2, long) or isinstance(unit2,
-                                                                                                         complex) or isinstance(
-            unit2, oct) or isinstance(unit2, hex):
+        elif isinstance(unit2, int) or isinstance(unit2, float) or \
+                isinstance(unit2, long) or isinstance(unit2, complex) \
+                or isinstance(unit2, oct) or isinstance(unit2, hex):
             return Unit(self.value * unit2, self.unit)
         # else:
         #     raise UnitOperandError('not object of type unit: {}'.format(type(unit2)))
@@ -446,7 +452,7 @@ class Unit(object):
         raise TypeError('invalid conversion from Unit object to long')
 
     def __str__(self):
-        return '{} {}'.format(self.value, self.__unit).strip(' ')
+        return '{} {}'.format(self.value, self._unit).strip(' ')
     # def __repr__(self):
     #     return '{} {}'.format(self.value, self.__unit)
 

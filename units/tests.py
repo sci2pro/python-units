@@ -148,6 +148,13 @@ class TestUnits(unittest.TestCase):
         # self.assertEqual(str(long_unit(Unit(rnum, metre))), '{} m'.format(long(rnum)))
         self.assertEqual(str(complex_unit(Unit(rnum, metre))), '{} m'.format(complex(rnum)))
 
+    def test_operation_derived(self):
+        """Operations on derived units"""
+        v1 = Unit(random.random(), newton)
+        v2 = Unit(random.random(), radian)
+        result = v1 / v2
+        self.assertIsInstance(str(result), str) # otherwise we get a typeerror
+
 
 if __name__ == "__main__":
     unittest.main()
