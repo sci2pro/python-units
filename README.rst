@@ -1,6 +1,10 @@
 ================================================================
 units
 ================================================================
+
+.. image:: https://badge.fury.io/py/python-units.svg
+    :target: https://badge.fury.io/py/python-units
+
 Python library to represent numbers with units
 
 Example:
