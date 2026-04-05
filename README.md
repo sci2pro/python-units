@@ -4,6 +4,10 @@
 
 Python library to represent quantities with units
 
+Supported Python versions: 3.10+
+
+Python 2 is not supported.
+
 Preferred API:
 
 ```python
@@ -29,6 +33,9 @@ print(u.Unit(1, u.metre))
 The legacy `Unit` constructor remains available as a compatibility alias for
 `Quantity` during the migration period, but new code should prefer
 `from units import Quantity` and `from units.si import ...`.
+
+The package is Python 3-only. Python 2 compatibility behavior is not part of the
+supported interface.
 
 # Migration guide
 
@@ -64,6 +71,14 @@ Stable top-level imports:
 Canonical unit imports:
 
 * `from units.si import metre, second, newton`
+
+Legacy compatibility helpers:
+
+* `long_quantity`
+* `long_unit`
+
+These names remain available as compatibility aliases for integer conversion in
+Python 3, but new code should prefer `int_quantity`.
 
 # Notes on semantics
 

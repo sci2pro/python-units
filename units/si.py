@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """Predefined SI base units and common derived units."""
 
-from __future__ import division
-
 from .unit import DerivedUnit, SIUnit, register_canonical_unit
 
 # SI units

@@ -23,6 +23,15 @@ classifiers = [
 ]
 dependencies = []
 
+[project.optional-dependencies]
+dev = [
+  "build",
+  "pytest",
+  "pytest-cov",
+  "tox",
+  "twine",
+]
+
 [project.urls]
 Homepage = "https://github.com/sci2pro/python-units"
 
