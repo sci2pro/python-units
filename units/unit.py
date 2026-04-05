@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Unit definition types and unit algebra."""
 
-from __future__ import annotations, division
+from __future__ import annotations
 
 from typing import Dict
 
@@ -74,9 +74,6 @@ class BaseUnit(object):
 
     def __mul__(self, unit2: BaseUnit) -> BaseUnit:
         return self._combine(unit2, 'mul')
-
-    def __div__(self, unit2: BaseUnit) -> BaseUnit:
-        return self._combine(unit2, 'div')
 
     def __truediv__(self, unit2: BaseUnit) -> BaseUnit:
         return self._combine(unit2, 'div')

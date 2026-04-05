@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Quantity type and quantity operations."""
 
-from __future__ import annotations, division
+from __future__ import annotations
 
 from numbers import Number, Real
 from typing import TypeAlias
@@ -124,12 +124,6 @@ class Quantity(object):
     def __rmul__(self, quantity2: object) -> Quantity:
         return self.__mul__(quantity2)
 
-    def __div__(self, quantity2: object) -> Quantity:
-        return self.__truediv__(quantity2)
-
-    def __rdiv__(self, quantity2: object) -> Quantity:
-        return self.__rtruediv__(quantity2)
-
     def __truediv__(self, quantity2: object) -> Quantity:
         if isinstance(quantity2, Quantity):
             return self.__class__(self.value / quantity2.value, self.unit / quantity2.unit)
@@ -192,9 +186,6 @@ class Quantity(object):
     def __float__(self) -> float:
         raise TypeError('invalid conversion from Quantity object to float')
 
-    def __long__(self) -> int:
-        raise TypeError('invalid conversion from Quantity object to long')
-
     def __str__(self) -> str:
         return '{} {}'.format(self.value, self.unit).strip()
 
@@ -212,7 +203,7 @@ def float_quantity(quantity: Quantity) -> Quantity:
 
 
 def long_quantity(quantity: Quantity) -> Quantity:
-    """Convert a quantity value to long/int while preserving its unit."""
+    """Legacy compatibility helper equivalent to ``int_quantity``."""
     _require_quantity_operand(quantity, 'long conversion')
     return Quantity(int(quantity.value), quantity.unit)
 

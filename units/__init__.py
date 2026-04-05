@@ -7,8 +7,6 @@ Preferred usage:
     from units.si import metre, second
 """
 
-from __future__ import print_function
-
 import sys
 
 from .errors import (
