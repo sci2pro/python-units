@@ -36,14 +36,15 @@ from units.errors import (
 class TestUnits(unittest.TestCase):
     def test_new_api_imports(self):
         """Tests the preferred public API."""
-        distance = Quantity(3, si.metre)
-        time = Quantity(2, si.second)
-        force = Quantity(5, si.newton)
+        distance = 3 * si.metre
+        time = 2 * si.second
+        force = 5 * si.newton
 
         self.assertEqual(str(distance), '3 m')
         self.assertEqual(str(time), '2 s')
         self.assertEqual(str(force), '5 N')
         self.assertEqual(str(distance / time), '1.5 m·s^-1')
+        self.assertEqual(str(Quantity(3, si.metre)), '3 m')
 
     def test_legacy_api_compatibility(self):
         """Tests that the legacy API remains available."""
@@ -107,6 +108,31 @@ class TestUnits(unittest.TestCase):
         self.assertEqual(str(24 / x), '2.0 m^-1')
         self.assertEqual(str(24 // x), '2 m^-1')
         self.assertEqual(str(25 % x), '1 m^-1')
+
+    def test_scalar_unit_construction(self):
+        """Scalar-by-unit multiplication should construct quantities."""
+        self.assertEqual(str(3 * metre), '3 m')
+        self.assertEqual(str(metre * 3), '3 m')
+        self.assertEqual(str(2.5 * newton), '2.5 N')
+
+    def test_quantity_unit_algebra(self):
+        """Quantities should combine cleanly with unit definitions."""
+        speed = (10 * metre) / second
+        area = (3 * metre) * metre
+        self.assertEqual(str(speed), '10 m·s^-1')
+        self.assertEqual(str(area), '3 m^2')
+
+    def test_power_operators(self):
+        """Units and quantities should support exponentiation coherently."""
+        self.assertEqual(str(5 * metre ** 3), '5 m^3')
+        self.assertEqual(str((3 * metre) ** 2), '9 m^2')
+        self.assertEqual(str((2 * volt) ** 2), '4 V^2')
+        self.assertEqual(str(Quantity(4) ** 0.5), '2.0')
+
+        with self.assertRaises(InvalidValueError):
+            metre ** 1.5
+        with self.assertRaises(UnitOperandError):
+            (3 * metre) ** 0.5
 
     def test_invalid_operations(self):
         """Test operations that would fail e.g. addition of different units"""

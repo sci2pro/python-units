@@ -3,10 +3,11 @@
 
 from __future__ import annotations
 
+from numbers import Number
 from typing import Dict
 
 from .dimension import Dimension, DimensionSystem, SI_DIMENSION_SYSTEM
-from .errors import InvalidUnitError, InvalidValueError, UnitCompatibilityError
+from .errors import InvalidUnitError, InvalidValueError, UnitCompatibilityError, UnitOperandError
 
 _CANONICAL_UNITS: dict[Dimension, BaseUnit] = {}
 
@@ -80,11 +81,50 @@ class BaseUnit(object):
             return self.__class__(dimension=dimension)
         return resolve_unit(dimension)
 
-    def __mul__(self, unit2: BaseUnit) -> BaseUnit:
-        return self._combine(unit2, 'mul')
+    def _quantity_from_scalar(self, value: Number) -> object:
+        from .quantity import Quantity
 
-    def __truediv__(self, unit2: BaseUnit) -> BaseUnit:
-        return self._combine(unit2, 'div')
+        return Quantity(value, self)
+
+    def __mul__(self, unit2: object) -> object:
+        if isinstance(unit2, BaseUnit):
+            return self._combine(unit2, 'mul')
+        if isinstance(unit2, Number) and not isinstance(unit2, bool):
+            return self._quantity_from_scalar(unit2)
+        raise UnitOperandError(
+            'unsupported operand for multiplication: {}'.format(type(unit2).__name__)
+        )
+
+    def __rmul__(self, unit2: object) -> object:
+        if isinstance(unit2, Number) and not isinstance(unit2, bool):
+            return self._quantity_from_scalar(unit2)
+        raise UnitOperandError(
+            'unsupported operand for multiplication: {}'.format(type(unit2).__name__)
+        )
+
+    def __truediv__(self, unit2: object) -> BaseUnit:
+        if isinstance(unit2, BaseUnit):
+            return self._combine(unit2, 'div')
+        raise UnitOperandError(
+            'unsupported operand for division: {}'.format(type(unit2).__name__)
+        )
+
+    def __pow__(self, exponent: object) -> BaseUnit:
+        if not isinstance(exponent, int) or isinstance(exponent, bool):
+            raise InvalidValueError(
+                'unit exponent must be an integer, got {}'.format(type(exponent).__name__)
+            )
+        dimension = Dimension(
+            system=self.dimension.system,
+            exponents=tuple(value * exponent for value in self.dimension.exponents),
+        )
+        if isinstance(self, DerivedUnit) and self.name and exponent != 1:
+            derived = DerivedUnit(dimension=dimension)
+            derived.name = '{}^{}'.format(self.name, exponent)
+            return derived
+        if dimension.system != SI_DIMENSION_SYSTEM:
+            return self.__class__(dimension=dimension)
+        return resolve_unit(dimension)
 
     def __str__(self) -> str:
         return self.dimension.render()

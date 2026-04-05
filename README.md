@@ -19,13 +19,37 @@ Preferred API:
 from units import Quantity
 from units.si import metre, second, newton
 
-distance = Quantity(10, metre)
-time = Quantity(2, second)
+distance = 10 * metre
+time = 2 * second
 speed = distance / time
-force = Quantity(5, newton)
+force = 5 * newton
 print(distance)
 print(speed)
 print(force)
+```
+
+The preferred construction style is scalar-by-unit multiplication:
+
+```python
+from units.si import metre, second
+
+length = 3 * metre
+time = 2 * second
+speed = length / time
+volume = 5 * metre ** 3
+```
+
+Because `**` binds more tightly than `*`, `5 * metre ** 3` is interpreted as
+`5 * (metre ** 3)`, which is the intended geometric-unit behavior.
+
+The explicit constructor remains supported and is still the right low-level form
+when you want to be fully explicit:
+
+```python
+from units import Quantity
+from units.si import metre
+
+length = Quantity(3, metre)
 ```
 
 Legacy API compatibility:
@@ -54,6 +78,17 @@ speed = distance / time
 ```
 
 New style:
+
+```python
+from units.si import metre, second
+
+distance = 3 * metre
+time = 2 * second
+speed = distance / time
+volume = 5 * metre ** 3
+```
+
+Still supported when you want the fully explicit constructor form:
 
 ```python
 from units import Quantity
@@ -89,6 +124,7 @@ Python 3, but new code should prefer `int_quantity`.
 
 * Addition and subtraction require identical units.
 * Multiplication and division combine units algebraically.
+* Integer powers of units and unit-bearing quantities are supported.
 * Unitless quantities are supported explicitly.
 * The core quantity model allows signed values. Domain-specific constraints such
   as non-negative lengths should be enforced by higher-level types or validators.
@@ -98,11 +134,10 @@ Python 3, but new code should prefer `int_quantity`.
 ## Electrical engineering: from resistance to power dissipation
 
 ```python
-from units import Quantity
 from units.si import ampere, ohm, volt, watt
 
-current = Quantity(12, ampere)
-resistance = Quantity(8, ohm)
+current = 12 * ampere
+resistance = 8 * ohm
 voltage = current * resistance
 power = voltage * current
 
@@ -118,13 +153,12 @@ This works because the package canonicalizes unambiguous derived-unit assemblies
 ## Pump sizing: hydraulic power from pressure rise and flow rate
 
 ```python
-from units import Quantity
 from units.si import metre, second, kilogram, pascal, watt
 
-density = Quantity(998, kilogram / metre / metre / metre)
-flow_velocity = Quantity(2.5, metre / second)
-pipe_area = Quantity(0.0314, metre * metre)
-pressure_rise = Quantity(180000, pascal)
+density = 998 * (kilogram / metre ** 3)
+flow_velocity = 2.5 * (metre / second)
+pipe_area = 0.0314 * metre ** 2
+pressure_rise = 180000 * pascal
 
 volumetric_flow = flow_velocity * pipe_area
 hydraulic_power = pressure_rise * volumetric_flow
@@ -139,25 +173,44 @@ to intuitive derived units at the end of the chain.
 ## Structural mechanics: work from force over distance
 
 ```python
-from units import Quantity
 from units.si import metre, newton
 
-force = Quantity(4200, newton)
-displacement = Quantity(0.35, metre)
+force = 4200 * newton
+displacement = 0.35 * metre
 work = force * displacement
 
 print(work)  # J
 ```
 
+## Geometric quantities: powers of units
+
+```python
+from units.si import metre
+
+volume = 5 * metre ** 3
+area = (12 * metre) ** 2
+
+print(volume)  # 5 m^3
+print(area)    # 144 m^2
+```
+
+The unit form is also valid on its own:
+
+```python
+from units.si import metre
+
+area_unit = metre ** 2
+volume_unit = metre ** 3
+```
+
 ## Fluid mechanics: dynamic pressure
 
 ```python
-from units import Quantity
 from units.si import kilogram, metre, pascal, second
 
-density = Quantity(1.225, kilogram / metre / metre / metre)
-velocity = Quantity(68, metre / second)
-dynamic_pressure = Quantity(0.5) * density * velocity * velocity
+density = 1.225 * (kilogram / metre ** 3)
+velocity = 68 * (metre / second)
+dynamic_pressure = 0.5 * density * velocity * velocity
 
 print(dynamic_pressure)  # Pa
 ```
@@ -169,19 +222,16 @@ canonicalization. Use them when you want the same algebra and formatting
 behaviour without forcing your units into the SI registry.
 
 ```python
-from units import CustomUnitBase, DimensionSystem, Quantity
+from units import CustomUnitBase, DimensionSystem
 
 class CommUnit(CustomUnitBase):
     dimension_system = DimensionSystem('comm', ('b', 's', 'B'))
 
-bit = CommUnit()
-bit.unit_dict = {'b': 1, 's': 0, 'B': 0}
+bit = CommUnit.define('b')
+second = CommUnit.define('s')
 
-second = CommUnit()
-second.unit_dict = {'b': 0, 's': 1, 'B': 0}
-
-data = Quantity(32, bit)
-duration = Quantity(4, second)
+data = 32 * bit
+duration = 4 * second
 rate = data / duration
 
 print(rate)  # 8.0 b·s^-1
