@@ -7,7 +7,7 @@ class UnitsError(Exception):
 
 
 class InvalidValueError(UnitsError):
-    """Raised when a numeric value is invalid for a Unit."""
+    """Raised when a numeric value is invalid for a quantity."""
 
 
 class InvalidUnitError(UnitsError):

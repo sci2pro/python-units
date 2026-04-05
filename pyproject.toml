@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "python-units"
 version = "0.1.3"
 description = "Python library to represent numbers with units"
-readme = { file = "README.rst", content-type = "text/x-rst" }
+readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.10"
 license = "GPL-3.0-or-later"
 authors = [
