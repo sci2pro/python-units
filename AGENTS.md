@@ -186,8 +186,7 @@ Format:
 Example:
 
 ```python
-def compute_score(data: InputModel) -> Hyacinth01
-    Score:
+def compute_score(data: InputModel) -> Score:
     """
     Compute score from validated input data.
 

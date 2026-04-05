@@ -21,139 +21,217 @@ __author__ = "Paul K. Korir, PhD"
 __email__ = "paul.korir@gmail.com"
 __date__ = "2017-06-02"
 
-import random
 import unittest
 
+import units.si as si
 from units import *
+from units.errors import (
+    InvalidUnitError,
+    InvalidValueError,
+    UnitCompatibilityError,
+    UnitOperandError,
+)
 
 
 class TestUnits(unittest.TestCase):
+    def test_new_api_imports(self):
+        """Tests the preferred public API."""
+        distance = Quantity(3, si.metre)
+        time = Quantity(2, si.second)
+        force = Quantity(5, si.newton)
+
+        self.assertEqual(str(distance), '3 m')
+        self.assertEqual(str(time), '2 s')
+        self.assertEqual(str(force), '5 N')
+        self.assertEqual(str(distance / time), '1.5 m·s^-1')
+
+    def test_legacy_api_compatibility(self):
+        """Tests that the legacy API remains available."""
+        self.assertIs(Unit, Quantity)
+        self.assertIs(metre, si.metre)
+        self.assertIs(second, si.second)
+        self.assertIs(newton, si.newton)
+
     def test_SIUnits(self):
         """Tests on SI units"""
-        rint = random.randint(1, 100)
-        self.assertEqual(str(Unit(rint, metre)), '{} m'.format(rint))
-        self.assertEqual(str(Unit(rint, second)), '{} s'.format(rint))
-        self.assertEqual(str(Unit(rint, kilogram)), '{} kg'.format(rint))
-        self.assertEqual(str(Unit(rint, kelvin)), '{} K'.format(rint))
-        self.assertEqual(str(Unit(rint, candela)), '{} cd'.format(rint))
-        self.assertEqual(str(Unit(rint, ampere)), '{} A'.format(rint))
-        self.assertEqual(str(Unit(rint, mole)), '{} mol'.format(rint))
+        value = 7
+        self.assertEqual(str(Unit(value, metre)), '{} m'.format(value))
+        self.assertEqual(str(Unit(value, second)), '{} s'.format(value))
+        self.assertEqual(str(Unit(value, kilogram)), '{} kg'.format(value))
+        self.assertEqual(str(Unit(value, kelvin)), '{} K'.format(value))
+        self.assertEqual(str(Unit(value, candela)), '{} cd'.format(value))
+        self.assertEqual(str(Unit(value, ampere)), '{} A'.format(value))
+        self.assertEqual(str(Unit(value, mole)), '{} mol'.format(value))
 
     def test_DerivedUnits(self):
         """Tests on derived units"""
-        rint = random.randint(1, 100)
-        self.assertEqual(str(Unit(rint, radian)), '{} rad'.format(rint))
-        self.assertEqual(str(Unit(rint, steradian)), '{} sr'.format(rint))
-        self.assertEqual(str(Unit(rint, hertz)), '{} Hz'.format(rint))
-        self.assertEqual(str(Unit(rint, newton)), '{} N'.format(rint))
-        self.assertEqual(str(Unit(rint, pascal)), '{} Pa'.format(rint))
-        self.assertEqual(str(Unit(rint, joule)), '{} J'.format(rint))
-        self.assertEqual(str(Unit(rint, watt)), '{} W'.format(rint))
-        self.assertEqual(str(Unit(rint, coulomb)), '{} C'.format(rint))
-        self.assertEqual(str(Unit(rint, volt)), '{} V'.format(rint))
-        self.assertEqual(str(Unit(rint, farad)), '{} F'.format(rint))
-        self.assertEqual(str(Unit(rint, ohm)), '{} Ω'.format(rint))
-        self.assertEqual(str(Unit(rint, siemens)), '{} S'.format(rint))
-        self.assertEqual(str(Unit(rint, weber)), '{} Wb'.format(rint))
-        self.assertEqual(str(Unit(rint, tesla)), '{} T'.format(rint))
-        self.assertEqual(str(Unit(rint, henry)), '{} H'.format(rint))
-        self.assertEqual(str(Unit(rint, degree_celcius)), '{} °C'.format(rint))
-        self.assertEqual(str(Unit(rint, lumen)), '{} lm'.format(rint))
-        self.assertEqual(str(Unit(rint, lux)), '{} lx'.format(rint))
-        self.assertEqual(str(Unit(rint, becquerel)), '{} Bq'.format(rint))
-        self.assertEqual(str(Unit(rint, gray)), '{} Gy'.format(rint))
-        self.assertEqual(str(Unit(rint, sievert)), '{} Sv'.format(rint))
-        self.assertEqual(str(Unit(rint, katal)), '{} kat'.format(rint))
+        value = 7
+        self.assertEqual(str(Unit(value, radian)), '{} rad'.format(value))
+        self.assertEqual(str(Unit(value, steradian)), '{} sr'.format(value))
+        self.assertEqual(str(Unit(value, hertz)), '{} Hz'.format(value))
+        self.assertEqual(str(Unit(value, newton)), '{} N'.format(value))
+        self.assertEqual(str(Unit(value, pascal)), '{} Pa'.format(value))
+        self.assertEqual(str(Unit(value, joule)), '{} J'.format(value))
+        self.assertEqual(str(Unit(value, watt)), '{} W'.format(value))
+        self.assertEqual(str(Unit(value, coulomb)), '{} C'.format(value))
+        self.assertEqual(str(Unit(value, volt)), '{} V'.format(value))
+        self.assertEqual(str(Unit(value, farad)), '{} F'.format(value))
+        self.assertEqual(str(Unit(value, ohm)), '{} Ω'.format(value))
+        self.assertEqual(str(Unit(value, siemens)), '{} S'.format(value))
+        self.assertEqual(str(Unit(value, weber)), '{} Wb'.format(value))
+        self.assertEqual(str(Unit(value, tesla)), '{} T'.format(value))
+        self.assertEqual(str(Unit(value, henry)), '{} H'.format(value))
+        self.assertEqual(str(Unit(value, degree_celcius)), '{} °C'.format(value))
+        self.assertEqual(str(Unit(value, lumen)), '{} lm'.format(value))
+        self.assertEqual(str(Unit(value, lux)), '{} lx'.format(value))
+        self.assertEqual(str(Unit(value, becquerel)), '{} Bq'.format(value))
+        self.assertEqual(str(Unit(value, gray)), '{} Gy'.format(value))
+        self.assertEqual(str(Unit(value, sievert)), '{} Sv'.format(value))
+        self.assertEqual(str(Unit(value, katal)), '{} kat'.format(value))
 
     def test_Unit(self):
         """Test on the Unit class"""
-        rint = random.randint(1, 100)
-        x = Unit(rint, metre)
-        self.assertEqual(x.value, rint)
+        x = Unit(11, metre)
+        self.assertEqual(x.value, 11)
         self.assertEqual(str(x.unit), 'm')
-        self.assertEqual(str(x.full_units), '{} m'.format(rint))
+        self.assertEqual(str(x.full_units), '11 m')
+        self.assertFalse(x.is_unitless)
 
     def test_scalars(self):
         """Test multiplication or division by a scalar"""
-        rint = random.randint(1, 100)
-        rint2 = random.randint(1, 100)
-        x = Unit(rint, metre)
-        y = x * rint2
-        z = x / rint2
-        self.assertEqual(str(y), '{} m'.format(rint * rint2))
-        self.assertEqual(str(z), '{} m'.format(rint / rint2))
+        x = Unit(12, metre)
+        y = x * 4
+        z = x / 3
+        self.assertEqual(str(y), '48 m')
+        self.assertEqual(str(z), '4.0 m')
+        self.assertEqual(str(24 / x), '2.0 m^-1')
+        self.assertEqual(str(24 // x), '2 m^-1')
+        self.assertEqual(str(25 % x), '1 m^-1')
 
     def test_invalid_operations(self):
         """Test operations that would fail e.g. addition of different units"""
-        rnum = random.random()
         with self.assertRaises(TypeError):
-            complex(Unit(rnum, metre))
+            complex(Unit(1.5, metre))
         with self.assertRaises(TypeError):
-            int(Unit(rnum, metre))
+            int(Unit(1.5, metre))
         with self.assertRaises(TypeError):
-            float(Unit(rnum, metre))
-        # with self.assertRaises(TypeError):
-        #     long(Unit(rnum, metre))
+            float(Unit(1.5, metre))
+        with self.assertRaises(UnitCompatibilityError):
+            Unit(2, metre) + Unit(3, second)
+        with self.assertRaises(UnitCompatibilityError):
+            Unit(2, metre) % Unit(3, second)
+        with self.assertRaises(UnitOperandError):
+            Unit(2, metre) + 3
+        with self.assertRaises(UnitOperandError):
+            3 + Unit(2, metre)
+        with self.assertRaises(UnitOperandError):
+            Unit(2, metre) * object()
+        with self.assertRaises(UnitOperandError):
+            Unit(2, metre) // complex(2, 1)
+        with self.assertRaises(InvalidValueError):
+            Unit('3', metre)
+        with self.assertRaises(InvalidUnitError):
+            Unit(3, 'metre')
 
     def test_unary_operators(self):
         """Test unary operators"""
-        rint = random.randint(1, 100)
-        x = Unit(rint, metre)
-        y = Unit(-rint, metre)
-        self.assertEqual(str(-x), '{} m'.format(-rint))
-        self.assertEqual(str(-y), '{} m'.format(rint))
-        self.assertEqual(str(+x), '{} m'.format(+rint))
-        self.assertEqual(str(+y), '{} m'.format(-rint))
-        self.assertEqual(str(abs(x)), '{} m'.format(abs(rint)))
-        self.assertEqual(str(abs(y)), '{} m'.format(abs(-rint)))
+        x = Unit(9, metre)
+        y = Unit(-9, metre)
+        self.assertEqual(str(-x), '-9 m')
+        self.assertEqual(str(-y), '9 m')
+        self.assertEqual(str(+x), '9 m')
+        self.assertEqual(str(+y), '-9 m')
+        self.assertEqual(str(abs(x)), '9 m')
+        self.assertEqual(str(abs(y)), '9 m')
 
     def test_operations(self):
         """Test operations of the form Unit <operation> OtherUnit"""
-        rnum1 = random.random() * 10
-        rnum2 = random.random() * 10
-        x = Unit(rnum1, metre)
-        y = Unit(rnum2, metre)
-        self.assertEqual(str(x + y), '{} m'.format(rnum1 + rnum2))
-        self.assertEqual(str(y + x), '{} m'.format(rnum2 + rnum1))
+        x = Unit(9.0, metre)
+        y = Unit(4.0, metre)
+        self.assertEqual(str(x + y), '13.0 m')
+        self.assertEqual(str(y + x), '13.0 m')
 
-        self.assertEqual(str(x - y), '{} m'.format(rnum1 - rnum2))
-        self.assertEqual(str(y - x), '{} m'.format(rnum2 - rnum1))
+        self.assertEqual(str(x - y), '5.0 m')
+        self.assertEqual(str(y - x), '-5.0 m')
 
-        self.assertEqual(str(x * y), '{} m^2'.format(rnum1 * rnum2))
-        self.assertEqual(str(y * x), '{} m^2'.format(rnum2 * rnum1))
+        self.assertEqual(str(x * y), '36.0 m^2')
+        self.assertEqual(str(y * x), '36.0 m^2')
 
-        self.assertEqual(str(x / y), '{}'.format(rnum1 / rnum2))
-        self.assertEqual(str(y / x), '{}'.format(rnum2 / rnum1))
+        self.assertEqual(str(x / y), '2.25')
+        self.assertEqual(str(y / x), '0.4444444444444444')
 
-        self.assertEqual(str(x // y), '{}'.format(rnum1 // rnum2))
-        self.assertEqual(str(y // x), '{}'.format(rnum2 // rnum1))
+        self.assertEqual(str(x // y), '2.0')
+        self.assertEqual(str(y // x), '0.0')
 
-        self.assertEqual(str(x % y), '{}'.format(rnum1 % rnum2))
-        self.assertEqual(str(y % x), '{}'.format(rnum2 % rnum1))
+        self.assertEqual(str(x % y), '1.0 m')
+        self.assertEqual(str(y % x), '4.0 m')
 
         a, b = divmod(x, y)
-        self.assertEqual(str(a), '{}'.format(rnum1 // rnum2))
-        self.assertEqual(str(b), '{}'.format(rnum1 % rnum2))
+        self.assertEqual(str(a), '2.0')
+        self.assertEqual(str(b), '1.0 m')
 
         c, d = divmod(y, x)
-        self.assertEqual(str(c), '{}'.format(rnum2 // rnum1))
-        self.assertEqual(str(d), '{}'.format(rnum2 % rnum1))
+        self.assertEqual(str(c), '0.0')
+        self.assertEqual(str(d), '4.0 m')
 
     def test_type_conversions(self):
         """Test conversion functions"""
-        rnum = random.random() * 10
-        rint = random.randint(1, 100)
-        self.assertEqual(str(int_unit(Unit(rnum, metre))), '{} m'.format(int(rnum)))
-        self.assertEqual(str(float_unit(Unit(rint, metre))), '{} m'.format(float(rint)))
-        # self.assertEqual(str(long_unit(Unit(rnum, metre))), '{} m'.format(long(rnum)))
-        self.assertEqual(str(complex_unit(Unit(rnum, metre))), '{} m'.format(complex(rnum)))
+        self.assertEqual(str(int_unit(Unit(4.8, metre))), '4 m')
+        self.assertEqual(str(float_unit(Unit(7, metre))), '7.0 m')
+        self.assertEqual(str(long_unit(Unit(4.8, metre))), '4 m')
+        self.assertEqual(str(complex_unit(Unit(4.8, metre))), '(4.8+0j) m')
+        self.assertEqual(str(int_quantity(Quantity(4.8, metre))), '4 m')
+        self.assertEqual(str(float_quantity(Quantity(7, metre))), '7.0 m')
 
     def test_operation_derived(self):
         """Operations on derived units"""
-        v1 = Unit(random.random(), newton)
-        v2 = Unit(random.random(), radian)
+        v1 = Unit(6.0, newton)
+        v2 = Unit(2.0, radian)
         result = v1 / v2
         self.assertIsInstance(str(result), str) # otherwise we get a typeerror
+        self.assertEqual(result.full_units, '3.0 m·kg·s^-2')
+
+    def test_reverse_unit_operations(self):
+        """Test reverse operations between two Unit objects."""
+        x = Unit(5, metre)
+        y = Unit(14, metre)
+        self.assertEqual(str(y - x), '9 m')
+        self.assertEqual(str(y / x), '2.8')
+
+    def test_unitless_values(self):
+        """Test behavior for dimensionless values."""
+        unitless = Unit(3)
+        self.assertTrue(unitless.is_unitless)
+        self.assertEqual(str(unitless), '3')
+        self.assertEqual(str(unitless * Unit(2, metre)), '6 m')
+        self.assertEqual(str(Unit(2, metre) / unitless), '0.6666666666666666 m')
+
+    def test_setters_and_definitions(self):
+        """Test explicit validation in setters and unit definitions."""
+        x = Unit(3, metre)
+        x.value = 4.5
+        x.unit = second
+        self.assertEqual(str(x), '4.5 s')
+
+        with self.assertRaises(InvalidValueError):
+            x.value = 'invalid'
+        with self.assertRaises(InvalidUnitError):
+            x.unit = 'invalid'
+        with self.assertRaises(InvalidUnitError):
+            SIUnit.define('invalid')
+        with self.assertRaises(InvalidValueError):
+            SIUnit.define('m', 1.2)
+
+    def test_helper_rejects_invalid_operand(self):
+        """Test helper conversion functions reject non-Unit operands."""
+        with self.assertRaises(UnitOperandError):
+            int_unit(3)
+        with self.assertRaises(UnitOperandError):
+            float_unit(3)
+        with self.assertRaises(UnitOperandError):
+            long_unit(3)
+        with self.assertRaises(UnitOperandError):
+            complex_unit(3)
 
 
 if __name__ == "__main__":
