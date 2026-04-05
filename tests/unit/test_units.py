@@ -24,6 +24,7 @@ import unittest
 
 import units.si as si
 from units import *
+from units.dimension import DimensionSystem
 from units.errors import (
     InvalidUnitError,
     InvalidValueError,
@@ -200,6 +201,20 @@ class TestUnits(unittest.TestCase):
         """Ambiguous dimensions should remain explicit instead of choosing an arbitrary name."""
         self.assertEqual(str(Unit(5, SIUnit() / second)), '5 s^-1')
         self.assertEqual(str(Unit(5, joule / kilogram)), '5 m^2·s^-2')
+
+    def test_custom_unit_systems(self):
+        """Custom unit systems should be easy to define without affecting SI canonicalization."""
+        class CommUnit(CustomUnitBase):
+            dimension_system = DimensionSystem('comm', ('b', 's', 'B'))
+
+        bit = CommUnit.define('b')
+        second_comm = CommUnit.define('s')
+
+        rate = Quantity(32, bit) / Quantity(4, second_comm)
+        self.assertEqual(str(rate), '8.0 b·s^-1')
+
+        with self.assertRaises(UnitCompatibilityError):
+            Quantity(1, metre) * Quantity(1, bit)
 
     def test_reverse_unit_operations(self):
         """Test reverse operations between two Unit objects."""

@@ -17,7 +17,9 @@
 
 Recommended checks:
 
-- `python3 -m unittest units.tests`
+- `python3 -m pip install -e .[dev]`
+- `PYTHONPATH=src python3 -m unittest discover -s tests/unit -p 'test_*.py'`
+- `python3 -m pytest tests/unit/test_units.py`
 - `python3 -m build --no-isolation --outdir artifacts/dist`
 - `python3 -m twine check artifacts/dist/python_units-0.1.3.tar.gz artifacts/dist/python_units-0.1.3-py3-none-any.whl`
 
@@ -26,3 +28,5 @@ Recommended checks:
 - Packaging metadata lives in `pyproject.toml`.
 - `setup.py` is only a setuptools compatibility shim.
 - CI and publishing workflows live in `.github/workflows/`.
+- Runtime package code lives under `src/units`.
+- Tests live under `tests/unit`.

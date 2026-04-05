@@ -2,11 +2,16 @@
 
 [![badge.fury.io](https://badge.fury.io/py/python-units.svg)](https://badge.fury.io/py/python-units)
 
-Python library to represent quantities with units
+Python library to represent quantities with units.
 
 Supported Python versions: 3.10+
 
 Python 2 is not supported.
+
+Project layout:
+
+- runtime package: `src/units`
+- tests: `tests/unit`
 
 Preferred API:
 
@@ -88,228 +93,105 @@ Python 3, but new code should prefer `int_quantity`.
 * The core quantity model allows signed values. Domain-specific constraints such
   as non-negative lengths should be enforced by higher-level types or validators.
 
-# Upcoming features
-* Short and long units (currently only short units)
+# Real-world examples
 
-* Multipliers e.g. kilo (k), mega (M), kibi (KiB), ergs etc.
-
-* Arbitrary units e.g. bits (b), cars etc.
-
-# Features
-* Basic units
+## Electrical engineering: from resistance to power dissipation
 
 ```python
-import units as u
-from random import randint
-# ampere
-print(u.Quantity(randint(1, 100), u.ampere))
-# candela
-print(u.Quantity(randint(1, 100), u.candela))
-# kelvin
-print(u.Quantity(randint(1, 100), u.kelvin))
-# kilogram
-print(u.Quantity(randint(1, 100), u.kilogram))
-# metre
-print(u.Quantity(randint(1, 100), u.metre))
-# mole
-print(u.Quantity(randint(1, 100), u.mole))
-# second
-print(u.Quantity(randint(1, 100), u.second))
+from units import Quantity
+from units.si import ampere, ohm, volt, watt
+
+current = Quantity(12, ampere)
+resistance = Quantity(8, ohm)
+voltage = current * resistance
+power = voltage * current
+
+print(voltage)  # 96 V
+print(power)    # 1152 W
 ```
 
-* Operations on units
+This works because the package canonicalizes unambiguous derived-unit assemblies:
+
+- `ampere * ohm -> volt`
+- `volt * ampere -> watt`
+
+## Pump sizing: hydraulic power from pressure rise and flow rate
 
 ```python
-import units as u
-from random import random
-x = u.Quantity(random(), u.second)
-y = u.Quantity(random(), u.ampere)
-# addition
-print(x + y)
-print(y + x)
-# subtraction
-print(x - y)
-print(y - x)
-# multiplication
-print(x * y)
-print(y * x)
-# division/true division
-print(x / y)
-print(y / x)
-# floor division
-print(x // y)
-print(y // x)
-# modulus
-print(x % y)
-# power
-print(x ** y)
-print(y ** x)
+from units import Quantity
+from units.si import metre, second, kilogram, pascal, watt
+
+density = Quantity(998, kilogram / metre / metre / metre)
+flow_velocity = Quantity(2.5, metre / second)
+pipe_area = Quantity(0.0314, metre * metre)
+pressure_rise = Quantity(180000, pascal)
+
+volumetric_flow = flow_velocity * pipe_area
+hydraulic_power = pressure_rise * volumetric_flow
+
+print(volumetric_flow)   # m^3·s^-1
+print(hydraulic_power)   # W
 ```
 
-* Operations between scalars and units
+This is a good example of a multi-step engineering computation that still renders
+to intuitive derived units at the end of the chain.
+
+## Structural mechanics: work from force over distance
 
 ```python
-import units as u
-from random import random
-x = u.Quantity(random(), u.second)
-a = random() * 10
-# addition
-print(a + y)
-print(y + a)
-# subtraction
-print(a - y)
-print(y - a)
-# multiplication
-print(a * y)
-print(y * a)
-# division/true division
-print(a / y)
-print(y / a)
-# floor division
-print(a // y)
-print(y // a)
-# modulus
-print(a % y)
-# power
-print(a ** y)
-print(y ** a)
+from units import Quantity
+from units.si import metre, newton
+
+force = Quantity(4200, newton)
+displacement = Quantity(0.35, metre)
+work = force * displacement
+
+print(work)  # J
 ```
 
-* Derived units
+## Fluid mechanics: dynamic pressure
 
 ```python
-import units as u
-from random import random
-# hertz
-print(u.Quantity(random() * 10, u.hertz))
-# newton
-print(u.Quantity(random() * 10, u.newton))
-# pascal
-print(u.Quantity(random() * 10, u.pascal))
-# joule
-print(u.Quantity(random() * 10, u.joule))
-# watt
-print(u.Quantity(random() * 10, u.watt))
-# coulomb
-print(u.Quantity(random() * 10, u.coulomb))
-# volt
-print(u.Quantity(random() * 10, u.volt))
-# farad
-print(u.Quantity(random() * 10, u.farad))
-# ohm
-print(u.Quantity(random() * 10, u.ohm))
-# siemems
-print(u.Quantity(random() * 10, u.siemens))
-# weber
-print(u.Quantity(random() * 10, u.weber))
-# tesla
-print(u.Quantity(random() * 10, u.tesla))
-# henry
-print(u.Quantity(random() * 10, u.henry))
-# degree celcius
-print(u.Quantity(random() * 10, u.degree_celcius))
-# lumen
-print(u.Quantity(random() * 10, u.lumen))
-# lux
-print(u.Quantity(random() * 10, u.lux))
-# becquerel
-print(u.Quantity(random() * 10, u.becquerel))
-# gray
-print(u.Quantity(random() * 10, u.gray))
-# sievert
-print(u.Quantity(random() * 10, u.sievert))
-# katal
-print(u.Quantity(random() * 10, u.katal))
+from units import Quantity
+from units.si import kilogram, metre, pascal, second
+
+density = Quantity(1.225, kilogram / metre / metre / metre)
+velocity = Quantity(68, metre / second)
+dynamic_pressure = Quantity(0.5) * density * velocity * velocity
+
+print(dynamic_pressure)  # Pa
 ```
 
-* Unpacking derived units
+## Custom unit systems
+
+Custom unit systems are supported, but they are intentionally separate from SI
+canonicalization. Use them when you want the same algebra and formatting
+behaviour without forcing your units into the SI registry.
 
 ```python
-import units as u
-from random import random
-# hertz
-print(u.Quantity(random() * 10, u.hertz).full_units)
-# newton
-print(u.Quantity(random() * 10, u.newton).full_units)
-# pascal
-print(u.Quantity(random() * 10, u.pascal).full_units)
-# joule
-print(u.Quantity(random() * 10, u.joule).full_units)
-# watt
-print(u.Quantity(random() * 10, u.watt).full_units)
-# coulomb
-print(u.Quantity(random() * 10, u.coulomb).full_units)
-# volt
-print(u.Quantity(random() * 10, u.volt).full_units)
-# farad
-print(u.Quantity(random() * 10, u.farad).full_units)
-# ohm
-print(u.Quantity(random() * 10, u.ohm).full_units)
-# siemems
-print(u.Quantity(random() * 10, u.siemens).full_units)
-# weber
-print(u.Quantity(random() * 10, u.weber).full_units)
-# tesla
-print(u.Quantity(random() * 10, u.tesla).full_units)
-# henry
-print(u.Quantity(random() * 10, u.henry).full_units)
-# degree celcius
-print(u.Quantity(random() * 10, u.degree_celcius).full_units)
-# lumen
-print(u.Quantity(random() * 10, u.lumen).full_units)
-# lux
-print(u.Quantity(random() * 10, u.lux).full_units)
-# becquerel
-print(u.Quantity(random() * 10, u.becquerel).full_units)
-# gray
-print(u.Quantity(random() * 10, u.gray).full_units)
-# sievert
-print(u.Quantity(random() * 10, u.sievert).full_units)
-# katal
-print(u.Quantity(random() * 10, u.katal).full_units)
+from units import CustomUnitBase, DimensionSystem, Quantity
+
+class CommUnit(CustomUnitBase):
+    dimension_system = DimensionSystem('comm', ('b', 's', 'B'))
+
+bit = CommUnit()
+bit.unit_dict = {'b': 1, 's': 0, 'B': 0}
+
+second = CommUnit()
+second.unit_dict = {'b': 0, 's': 1, 'B': 0}
+
+data = Quantity(32, bit)
+duration = Quantity(4, second)
+rate = data / duration
+
+print(rate)  # 8.0 b·s^-1
 ```
 
-* Arbitrary derived units
+Custom systems inherit useful behaviour:
 
-```python
-import units as u
-speed = u.DerivedUnit.define('speed', u.metre / u.second)
-v = u.Quantity(10, speed)
-```
+- dimensional algebra
+- string rendering
+- incompatibility checks within a system
 
-* Arbitrary custom units
-
-```python
-import units as u
-from units import BaseUnit
-
-class CommUnit(BaseUnit):
-    """Template class for communication units"""
-    def __init__(self, *args, **kwargs):
-        super(CommUnit, self).__init__(*args, **kwargs)
-        # redefine the base units
-        self.unit_dict = {
-            'b': 0,
-            's': 0,
-            'B': 0,
-        }
-    @classmethod
-    def define(cls, key, value=1):
-    	"""Constructor"""
-        obj = cls()
-        assert key in obj.unit_dict.keys()
-        assert isinstance(value, int)
-        obj.unit_dict[key] = value
-        return obj
-```
-
-which will be used as follows
-
-```python
-bit = CommUnit.define('b') # define a bit as referring to the 'b' unit
-second = CommUnit.define('s') # a second is 's'
-data = u.Quantity(32, bit)
-T = u.Quantity(4, second)
-# data rate
-print(data / T) # 8.0 b·s^-1 - bits per second
-```
+They do not automatically simplify into SI-derived names such as `V`, `J`, or
+`Pa`, and they cannot be mixed with SI units unless you build an explicit bridge.
