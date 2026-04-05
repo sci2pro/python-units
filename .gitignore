@@ -115,3 +115,5 @@ sfftk.egg-info
 build
 .cache
 /.coverage
+artifacts/
+.artifacts/
