@@ -1,22 +1,18 @@
 # -*- coding: utf-8 -*-
-"""Domain exceptions for the units package."""
+"""Compatibility exports for domain exceptions."""
 
+from core.errors import (
+    InvalidUnitError,
+    InvalidValueError,
+    UnitCompatibilityError,
+    UnitOperandError,
+    UnitsError,
+)
 
-class UnitsError(Exception):
-    """Base exception for unit-related failures."""
-
-
-class InvalidValueError(UnitsError):
-    """Raised when a numeric value is invalid for a quantity."""
-
-
-class InvalidUnitError(UnitsError):
-    """Raised when a provided unit object or unit definition is invalid."""
-
-
-class UnitCompatibilityError(UnitsError):
-    """Raised when an operation requires compatible units but they differ."""
-
-
-class UnitOperandError(UnitsError):
-    """Raised when an operation is attempted with an unsupported operand."""
+__all__ = [
+    "InvalidUnitError",
+    "InvalidValueError",
+    "UnitCompatibilityError",
+    "UnitOperandError",
+    "UnitsError",
+]

@@ -18,7 +18,9 @@ The package also preserves a temporary legacy compatibility path through `Unit =
 The repository has already completed a substantial transition from the original flat package:
 
 - runtime package code lives in `src/units`
+- layered implementation now lives in `src/api`, `src/core`, `src/models`, and `src/utils`
 - tests live in `tests/unit`
+- integration tests live in `tests/integration`
 - packaging is managed through `pyproject.toml`
 - CI and publish workflows exist under `.github/workflows`
 - the public API is typed
@@ -40,15 +42,13 @@ The implementation is coherent in purpose and significantly improved over the or
 - dedicated error module
 - Python 3-only packaging policy
 - `src` plus `tests` repository layout
+- layered implementation structure under `src/api`, `src/core`, `src/models`, and `src/utils`
+- `pytest`-driven unit and integration test suites
 - CI-based build and test verification
 
 ### Still not aligned
 
-- the runtime package is still a compact domain package under `src/units`, not the required layered structure under `src/api`, `src/core`, `src/models`, `src/services`, `src/adapters`, and `src/utils`
-- exceptions live in `src/units/errors.py`, not `src/core/errors.py`
-- tests run under `pytest`, but the test module is still written in `unittest` style even though `AGENTS.md` requires `pytest`
-- there is no `tests/integration` layer yet
-- demo behavior still exists in `src/units/__init__.py`
+- `src/services` and `src/adapters` exist only as placeholders because the library still has no orchestration layer or external integrations
 - compatibility aliases remain but do not emit deprecation warnings
 
 ## Architectural Direction
@@ -169,38 +169,25 @@ This is the current baseline. Remaining phases now focus on closing the gap betw
 
 ## Remaining Phases
 
-### Phase 7: Layered package restructuring
+### Completed Phase 7: Layered package restructuring
 
-Goal:
+Completed work:
 
-Reorganize the implementation to match the repository standard in `AGENTS.md` while preserving the current public API.
+- introduced `src/core` for quantity logic, unit algebra, and error types
+- introduced `src/models` for immutable dimension types
+- introduced `src/api` for curated exports and SI definitions
+- introduced `src/utils` for reusable numeric helpers
+- preserved `src/units` as a thin public compatibility facade
+- added placeholder `src/services` and `src/adapters` packages to satisfy the repository structure
 
-Required changes:
+### Completed Phase 8: Testing and verification alignment
 
-- introduce `src/core` for dimensional algebra, quantity operations, and error types
-- introduce `src/models` for immutable value objects such as `Dimension` and any future schemas
-- introduce `src/services` only if orchestration logic emerges that is distinct from the domain model
-- introduce `src/api` for curated exports and compatibility shims
-- introduce `src/utils` only for small reusable helpers that are not domain logic
-- keep `src/units` as a thin compatibility and public-export layer during the transition, or replace it with a package facade that re-exports from the layered implementation
+Completed work:
 
-Design constraint:
-
-The public import paths must remain stable during this phase.
-
-### Phase 8: Testing and verification alignment
-
-Goal:
-
-Bring the test and verification strategy into full compliance with `AGENTS.md`.
-
-Required changes:
-
-- rewrite test modules in `pytest` style
-- keep tests deterministic and isolated
-- introduce `tests/integration`
-- add integration coverage for packaging, import paths, and compatibility behavior
-- keep CI running both unit and integration suites
+- rewrote the unit tests in `pytest` style
+- introduced `tests/integration`
+- added integration coverage for public imports and compatibility behavior
+- updated CI and tox to run both test layers
 
 ### Phase 9: Compatibility deprecation policy
 
@@ -255,7 +242,6 @@ The next implementation work should happen in this order:
 1. Phase 7: layered package restructuring
 2. Phase 8: pytest and integration-test alignment
 3. Phase 9: deprecation policy implementation
-4. Phase 10: production-surface cleanup
 
 ## Definition of Done For The Remaining Plan
 
