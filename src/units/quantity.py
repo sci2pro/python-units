@@ -7,6 +7,7 @@ from numbers import Number, Real
 from typing import TypeAlias
 
 from .errors import InvalidValueError, UnitCompatibilityError, UnitOperandError
+from .dimension import SI_DIMENSION_SYSTEM
 from .unit import BaseUnit, SIUnit, clone_unit
 
 Scalar: TypeAlias = int | float | complex
@@ -96,6 +97,8 @@ class Quantity(object):
     @property
     def full_units(self) -> str:
         """Render derived units in their SI decomposition."""
+        if self.unit.dimension.system != SI_DIMENSION_SYSTEM:
+            return str(self)
         if not self.is_unitless and not isinstance(self.unit, SIUnit):
             return '{} {}'.format(self.value, self.unit.full_units).strip()
         return str(self)

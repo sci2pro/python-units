@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from typing import Dict
 
-from .dimension import Dimension
+from .dimension import Dimension, DimensionSystem, SI_DIMENSION_SYSTEM
 from .errors import InvalidUnitError, InvalidValueError, UnitCompatibilityError
 
 _CANONICAL_UNITS: dict[Dimension, BaseUnit] = {}
@@ -40,8 +40,10 @@ def require_unit_instance(unit: object) -> None:
 class BaseUnit(object):
     """Base class for unit definitions."""
 
+    dimension_system = SI_DIMENSION_SYSTEM
+
     def __init__(self, dimension: Dimension | None = None) -> None:
-        self._dimension = dimension or Dimension()
+        self._dimension = dimension or Dimension(system=self.dimension_system, exponents=(0,) * len(self.dimension_system.symbols))
 
     @property
     def unit_dict(self) -> Dict[str, int]:
@@ -50,7 +52,7 @@ class BaseUnit(object):
 
     @unit_dict.setter
     def unit_dict(self, unit_dict: Dict[str, int]) -> None:
-        self._dimension = Dimension.from_mapping(unit_dict)
+        self._dimension = Dimension.from_mapping(unit_dict, system=self.dimension_system)
 
     @property
     def dimension(self) -> Dimension:
@@ -66,10 +68,16 @@ class BaseUnit(object):
 
     def _combine(self, unit2: BaseUnit, operator_name: str) -> BaseUnit:
         require_unit_instance(unit2)
+        if self.dimension.system != unit2.dimension.system:
+            raise UnitCompatibilityError(
+                'unit systems mismatch: {} and {}'.format(self.dimension.system.name, unit2.dimension.system.name)
+            )
         if operator_name == 'mul':
             dimension = self.dimension * unit2.dimension
         else:
             dimension = self.dimension / unit2.dimension
+        if dimension.system != SI_DIMENSION_SYSTEM:
+            return self.__class__(dimension=dimension)
         return resolve_unit(dimension)
 
     def __mul__(self, unit2: BaseUnit) -> BaseUnit:
@@ -100,12 +108,31 @@ class SIUnit(BaseUnit):
             InvalidUnitError: If ``key`` is not a supported SI dimension.
             InvalidValueError: If ``value`` is not an integer exponent.
         """
-        if key not in Dimension.symbols:
+        if key not in cls.dimension_system.symbols:
             raise InvalidUnitError('unknown SI unit key: {}'.format(key))
         if not isinstance(value, int) or isinstance(value, bool):
             raise InvalidValueError('unit exponent must be an integer, got {}'.format(type(value).__name__))
-        obj = cls(dimension=Dimension.from_mapping({key: value}))
+        obj = cls(dimension=Dimension.from_mapping({key: value}, system=cls.dimension_system))
         return obj
+
+
+class CustomUnitBase(BaseUnit):
+    """Base class for non-SI unit systems.
+
+    Subclasses should override ``dimension_system`` with a custom
+    ``DimensionSystem`` definition.
+    """
+
+    dimension_system = DimensionSystem('custom', ())
+
+    @classmethod
+    def define(cls, key: str, value: int = 1) -> CustomUnitBase:
+        """Define a custom base unit within the subclass dimension system."""
+        if key not in cls.dimension_system.symbols:
+            raise InvalidUnitError('unknown custom unit key: {}'.format(key))
+        if not isinstance(value, int) or isinstance(value, bool):
+            raise InvalidValueError('unit exponent must be an integer, got {}'.format(type(value).__name__))
+        return cls(dimension=Dimension.from_mapping({key: value}, system=cls.dimension_system))
 
 
 class DerivedUnit(BaseUnit):

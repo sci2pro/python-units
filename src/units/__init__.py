@@ -16,6 +16,7 @@ from .errors import (
     UnitOperandError,
     UnitsError,
 )
+from .dimension import Dimension, DimensionSystem
 from .quantity import (
     Quantity,
     complex_quantity,
@@ -58,7 +59,7 @@ from .si import (
     watt,
     weber,
 )
-from .unit import BaseUnit, DerivedUnit, SIUnit
+from .unit import BaseUnit, CustomUnitBase, DerivedUnit, SIUnit
 
 __author__ = "Paul K. Korir"
 __email__ = "paul.korir@gmail.com"
@@ -75,6 +76,7 @@ __all__ = [
     'complex_quantity',
     'complex_unit',
     'coulomb',
+    'CustomUnitBase',
     'degree_celcius',
     'DerivedUnit',
     'farad',
@@ -158,3 +160,5 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
+    'Dimension',
+    'DimensionSystem',
