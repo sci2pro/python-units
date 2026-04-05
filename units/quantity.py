@@ -96,7 +96,7 @@ class Quantity(object):
     @property
     def full_units(self) -> str:
         """Render derived units in their SI decomposition."""
-        if not isinstance(self.unit, SIUnit):
+        if not self.is_unitless and not isinstance(self.unit, SIUnit):
             return '{} {}'.format(self.value, self.unit.full_units).strip()
         return str(self)
 

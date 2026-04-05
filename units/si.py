@@ -3,7 +3,7 @@
 
 from __future__ import division
 
-from .unit import DerivedUnit, SIUnit
+from .unit import DerivedUnit, SIUnit, register_canonical_unit
 
 # SI units
 ampere = SIUnit.define('A')
@@ -13,6 +13,9 @@ kilogram = SIUnit.define('kg')
 metre = SIUnit.define('m')
 mole = SIUnit.define('mol')
 second = SIUnit.define('s')
+
+for unit in (ampere, candela, kelvin, kilogram, metre, mole, second):
+    register_canonical_unit(unit)
 
 # derived units
 radian = DerivedUnit.define('rad', metre / metre)
@@ -37,3 +40,6 @@ becquerel = DerivedUnit.define('Bq', SIUnit() / second)
 gray = DerivedUnit.define('Gy', joule / kilogram)
 sievert = DerivedUnit.define('Sv', joule / kilogram)
 katal = DerivedUnit.define('kat', mole / second)
+
+for unit in (newton, pascal, joule, watt, coulomb, volt, farad, ohm, siemens, weber, tesla, henry, lumen, lux):
+    register_canonical_unit(unit)
