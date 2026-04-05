@@ -10,8 +10,12 @@ Python 2 is not supported.
 
 Project layout:
 
-- runtime package: `src/units`
-- tests: `tests/unit`
+- public facade: `src/units`
+- API exports: `src/api`
+- business logic: `src/core`
+- data models: `src/models`
+- utilities: `src/utils`
+- tests: `tests/unit` and `tests/integration`
 
 Preferred API:
 

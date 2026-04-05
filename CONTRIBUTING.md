@@ -28,5 +28,6 @@ Recommended checks:
 - Packaging metadata lives in `pyproject.toml`.
 - `setup.py` is only a setuptools compatibility shim.
 - CI and publishing workflows live in `.github/workflows/`.
-- Runtime package code lives under `src/units`.
-- Tests live under `tests/unit`.
+- Runtime business logic is layered under `src/api`, `src/core`, `src/models`, and `src/utils`.
+- The public compatibility facade lives under `src/units`.
+- Tests live under `tests/unit` and `tests/integration`.

@@ -31,10 +31,10 @@ jobs:
           python -m pip install . pytest pytest-cov
 
       - name: Run unit tests
-        run: python -m pytest tests/unit/test_units.py
+        run: python -m pytest tests/unit tests/integration
 
       - name: Run coverage tests
-        run: python -m pytest --cov=src/units tests/unit/test_units.py
+        run: python -m pytest --cov=api --cov=core --cov=models --cov=units --cov=utils tests/unit tests/integration
 
   build:
     name: Build distributions

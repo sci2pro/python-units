@@ -38,4 +38,4 @@ Homepage = "https://github.com/sci2pro/python-units"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["units*"]
+include = ["adapters*", "api*", "core*", "models*", "services*", "units*", "utils*"]
