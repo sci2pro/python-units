@@ -5,6 +5,9 @@ Preferred usage:
 
     from units import Quantity
     from units.si import metre, second
+
+    distance = 3 * metre
+    duration = 2 * second
 """
 
 import sys

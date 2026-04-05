@@ -121,6 +121,8 @@ class Quantity(object):
     def __mul__(self, quantity2: object) -> Quantity:
         if isinstance(quantity2, Quantity):
             return self.__class__(self.value * quantity2.value, self.unit * quantity2.unit)
+        if isinstance(quantity2, BaseUnit):
+            return self.__class__(self.value, self.unit * quantity2)
         self._require_numeric_scalar(quantity2, 'multiplication')
         return self.__class__(self.value * quantity2, self.unit)
 
@@ -130,6 +132,8 @@ class Quantity(object):
     def __truediv__(self, quantity2: object) -> Quantity:
         if isinstance(quantity2, Quantity):
             return self.__class__(self.value / quantity2.value, self.unit / quantity2.unit)
+        if isinstance(quantity2, BaseUnit):
+            return self.__class__(self.value, self.unit / quantity2)
         self._require_numeric_scalar(quantity2, 'division')
         return self.__class__(self.value / quantity2, self.unit)
 
@@ -170,6 +174,18 @@ class Quantity(object):
 
     def __rdivmod__(self, quantity2: object) -> tuple[Quantity, Quantity]:
         return self.__rfloordiv__(quantity2), self.__rmod__(quantity2)
+
+    def __pow__(self, exponent: object) -> Quantity:
+        self._require_numeric_scalar(exponent, 'power')
+        if isinstance(exponent, complex):
+            raise UnitOperandError('unsupported scalar for power: complex')
+        if not self.is_unitless and (not isinstance(exponent, int) or isinstance(exponent, bool)):
+            raise UnitOperandError(
+                'unsupported scalar for power: {}'.format(type(exponent).__name__)
+            )
+        if self.is_unitless:
+            return self.__class__(self.value ** exponent, self.unit)
+        return self.__class__(self.value ** exponent, self.unit ** exponent)
 
     def __neg__(self) -> Quantity:
         return self.__class__(-self.value, self.unit)
