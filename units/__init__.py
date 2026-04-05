@@ -1,5 +1,11 @@
 # -*- coding: utf-8 -*-
-"""Public API for the units package."""
+"""Public API for the units package.
+
+Preferred usage:
+
+    from units import Quantity
+    from units.si import metre, second
+"""
 
 from __future__ import print_function
 
