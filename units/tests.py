@@ -191,6 +191,17 @@ class TestUnits(unittest.TestCase):
         self.assertIsInstance(str(result), str) # otherwise we get a typeerror
         self.assertEqual(result.full_units, '3.0 m·kg·s^-2')
 
+    def test_canonical_named_unit_resolution(self):
+        """Derived-unit algebra should resolve to preferred named units when unambiguous."""
+        self.assertEqual(str(Unit(3, watt) / Unit(1, ampere)), '3.0 V')
+        self.assertEqual(str(Unit(2, newton) * Unit(5, metre)), '10 J')
+        self.assertEqual(str(Unit(8, volt) / Unit(2, ampere)), '4.0 Ω')
+
+    def test_ambiguous_dimensions_do_not_canonicalize(self):
+        """Ambiguous dimensions should remain explicit instead of choosing an arbitrary name."""
+        self.assertEqual(str(Unit(5, SIUnit() / second)), '5 s^-1')
+        self.assertEqual(str(Unit(5, joule / kilogram)), '5 m^2·s^-2')
+
     def test_reverse_unit_operations(self):
         """Test reverse operations between two Unit objects."""
         x = Unit(5, metre)
