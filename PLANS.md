@@ -30,7 +30,7 @@ The repository has already completed a substantial transition from the original 
 - custom unit systems are supported through `DimensionSystem` and `CustomUnitBase`
 - the README is now the primary user-facing documentation
 
-The implementation is coherent in purpose and significantly improved over the original package, but it does not yet fully satisfy the structural requirements in `AGENTS.md`.
+The implementation is coherent in purpose and significantly improved over the original package. The main remaining gaps are now policy and lifecycle concerns rather than core structure.
 
 ## Alignment With `AGENTS.md`
 
@@ -48,8 +48,18 @@ The implementation is coherent in purpose and significantly improved over the or
 
 ### Still not aligned
 
-- `src/services` and `src/adapters` exist only as placeholders because the library still has no orchestration layer or external integrations
 - compatibility aliases remain but do not emit deprecation warnings
+
+### Intentionally empty layers
+
+`src/services` and `src/adapters` are intentionally present but empty.
+
+That is acceptable for this library today because:
+
+- there is no orchestration layer distinct from the core unit algebra
+- there are no external integrations, I/O boundaries, or replaceable infrastructure adapters
+
+Those packages should remain available for future growth, but they are not an active gap.
 
 ## Architectural Direction
 
@@ -208,19 +218,7 @@ Recommended release sequence:
 2. Introduce warnings once the layered architecture is stable.
 3. Remove deprecated paths only in a deliberate breaking release.
 
-### Phase 10: Production-surface cleanup
-
-Goal:
-
-Remove leftover non-library behavior from the runtime package.
-
-Required changes:
-
-- remove `main()` from `src/units/__init__.py`
-- move any demonstrations into `README.md` or dedicated example files
-- ensure the package top level contains only importable library behavior
-
-### Phase 11: Higher-level domain extensions
+### Phase 10: Higher-level domain extensions
 
 Goal:
 
@@ -233,15 +231,14 @@ Candidate work:
 - richer canonicalization policies
 - more engineering and scientific examples
 
-This phase is optional and should not start until the structural and testing phases are complete.
+This phase is optional and should not start until the compatibility policy is settled.
 
 ## Immediate Priorities
 
 The next implementation work should happen in this order:
 
-1. Phase 7: layered package restructuring
-2. Phase 8: pytest and integration-test alignment
-3. Phase 9: deprecation policy implementation
+1. Phase 9: deprecation policy implementation
+2. Phase 10: higher-level domain extensions, only if they are still wanted after the compatibility policy is settled
 
 ## Definition of Done For The Remaining Plan
 
