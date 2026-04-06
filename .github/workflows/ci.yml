@@ -18,33 +18,43 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
 
       - name: Install package and test tools
         run: |
           python -m pip install --upgrade pip
-          python -m pip install . pytest pytest-cov
+          python -m pip install -e .[dev]
 
       - name: Run unit tests
+        if: matrix.python-version != '3.14'
         run: python -m pytest tests/unit tests/integration
 
       - name: Run coverage tests
-        run: python -m pytest --cov=api --cov=core --cov=models --cov=units --cov=utils tests/unit tests/integration
+        if: matrix.python-version == '3.14'
+        run: python -m pytest --cov=api --cov=core --cov=models --cov=units --cov=utils --cov-report=xml tests/unit tests/integration
+
+      - name: Upload coverage to Codecov
+        if: matrix.python-version == '3.14' && secrets.CODECOV_TOKEN != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false)
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
 
   build:
     name: Build distributions
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.13"
 

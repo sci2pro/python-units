@@ -1,6 +1,8 @@
 # units
 
 [![badge.fury.io](https://badge.fury.io/py/python-units.svg)](https://badge.fury.io/py/python-units)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://pypi.org/project/python-units/)
+[![Coverage 92%](https://img.shields.io/badge/coverage-92%25-brightgreen.svg)](/Users/paulkorir/PycharmProjects/python-units/tests/unit/test_units.py)
 
 Python library to represent quantities with units.
 
