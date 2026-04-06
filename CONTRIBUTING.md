@@ -21,7 +21,7 @@ Recommended checks:
 - `PYTHONPATH=src python3 -m unittest discover -s tests/unit -p 'test_*.py'`
 - `python3 -m pytest tests/unit/test_units.py`
 - `python3 -m build --no-isolation --outdir artifacts/dist`
-- `python3 -m twine check artifacts/dist/python_units-0.1.3.tar.gz artifacts/dist/python_units-0.1.3-py3-none-any.whl`
+- `python3 -m twine check artifacts/dist/python_units-0.2.0.tar.gz artifacts/dist/python_units-0.2.0-py3-none-any.whl`
 
 ## Packaging and CI
 

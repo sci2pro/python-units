@@ -14,10 +14,10 @@ jobs:
       contents: read
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.13"
 
@@ -64,6 +64,9 @@ jobs:
     if: github.event_name == 'release'
     permissions:
       id-token: write
+      contents: read
+    environment:
+      name: pypi
     steps:
       - name: Download release artifacts
         uses: actions/download-artifact@v4
@@ -73,3 +76,5 @@ jobs:
 
       - name: Publish package to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true

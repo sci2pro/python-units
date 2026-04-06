@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "python-units"
-version = "0.1.3"
+version = "0.2.0"
 description = "Python library to represent numbers with units"
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.10"
