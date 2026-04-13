@@ -226,19 +226,143 @@ Add optional higher-level semantics without weakening the core model.
 
 Candidate work:
 
-- constrained domain types such as `Length`, `Distance`, or `Duration`
-- explicit conversion APIs
+- constrained domain types such as `Length`, `Distance`, `Duration`, `Mass`, `AbsoluteTemperature`, `Displacement`, and `TemperatureInterval`
+- explicit conversion APIs between compatible units
+- support for metric prefixes and prefixed units
+- support for additional named unit systems such as imperial units
+- top-level extractor helpers for values, multipliers, and unit definitions
 - richer canonicalization policies
 - more engineering and scientific examples
 
 This phase is optional and should not start until the compatibility policy is settled.
+
+### Phase 10 detail: constrained domain types
+
+The phrase "constrained domain types" should be read as semantic quantity types layered on top of `Quantity`.
+
+These types would not replace dimensional correctness. They would add semantic constraints that dimensions alone cannot express.
+
+Examples:
+
+- `Length`
+  - uses a length-compatible unit
+  - rejects negative values where the domain requires non-negativity
+- `Displacement`
+  - uses a length-compatible unit
+  - allows signed values
+- `Duration`
+  - uses a time-compatible unit
+  - typically rejects negative values
+- `AbsoluteTemperature`
+  - distinguishes absolute scales such as kelvin from relative intervals
+- `TemperatureInterval`
+  - represents a difference in temperature rather than an absolute reading
+
+The design principle is:
+
+- the core `Quantity` type remains general and dimensionally correct
+- constrained types add semantic rules and safer domain-specific APIs
+
+### Phase 10 detail: conversion capabilities
+
+Unit conversion should be treated as a first-class feature, not as part of constrained domain types.
+
+The conversion roadmap should include:
+
+- same-dimension conversions within SI scales
+  - `metre <-> kilometre`
+  - `second <-> minute`
+  - `gram <-> kilogram`
+- affine conversions where offsets matter
+  - `kelvin <-> degree_celcius`
+- prefixed-unit support
+  - `milli`, `kilo`, `mega`, `micro`, `nano`, `pico`
+- additional named unit systems
+  - imperial units such as `inch`, `foot`, `mile`, `pound`, `fahrenheit`
+- explicit conversion entry points
+  - method-based APIs such as `quantity.to(kilometre)`
+  - helper-based APIs where appropriate
+
+This should be modeled explicitly in unit definitions, most likely by introducing scale and optional offset metadata rather than relying on dimensional equivalence alone.
+
+### Phase 10 detail: extractor helpers
+
+The package should eventually expose small top-level helpers that let users deliberately strip structure from a quantity.
+
+Candidate helpers:
+
+- `value(quantity)` -> numeric magnitude
+- `unit(quantity)` -> unit definition
+- `multiplier(quantity)` -> scalar factor relative to a canonical base unit or chosen display unit
+
+These helpers should be explicit and unsurprising. They should not silently convert units or discard offsets without documented rules.
+
+## Suggested Release Sequence Before 1.0.0
+
+The remaining work should be distributed across releases rather than packed into `1.0.0`.
+
+### 0.3.0: conversion foundations
+
+Recommended scope:
+
+- introduce conversion metadata on unit definitions
+- add explicit same-dimension conversions for straightforward multiplicative units
+- add prefixed SI units and prefixes
+- add top-level extractor helpers such as `value()` and `unit()`
+- document the conversion model clearly
+
+Non-goals for `0.3.0`:
+
+- full constrained semantic type hierarchy
+- large imperial coverage
+- aggressive deprecation of legacy API
+
+### 0.4.0: affine and cross-system conversions
+
+Recommended scope:
+
+- support affine conversions such as `kelvin <-> degree_celcius`
+- add the first stable non-SI named conversions, especially commonly used imperial units
+- refine conversion APIs based on `0.3.0` feedback
+- add tests and documentation for mixed conversion scenarios
+
+### 0.5.0: constrained semantic types
+
+Recommended scope:
+
+- introduce the first constrained domain types
+- define the boundary between general `Quantity` and semantic wrappers such as `Length` and `Displacement`
+- stabilize extractor semantics where offsets and conversion scales are involved
+- expand real-world documentation around safe use of semantic quantity types
+
+### 0.6.x or 0.7.0: deprecation enforcement
+
+Recommended scope:
+
+- implement Phase 9 fully if it has not already happened
+- emit warnings for `Unit` and other legacy compatibility paths
+- publish a clear migration deadline for the legacy API
+
+### 1.0.0: stable modern interface
+
+Target state:
+
+- modern `Quantity` plus `units.si` API is stable
+- conversion APIs are stable
+- prefixed units and supported non-SI systems are stable
+- constrained semantic types, if included, are stable
+- extractor helpers are stable
+- legacy compatibility paths are either removed or explicitly retained as part of the supported surface
+- release notes clearly state what is guaranteed going forward
 
 ## Immediate Priorities
 
 The next implementation work should happen in this order:
 
 1. Phase 9: deprecation policy implementation
-2. Phase 10: higher-level domain extensions, only if they are still wanted after the compatibility policy is settled
+2. Phase 10A: conversion foundations and extractor helpers
+3. Phase 10B: affine and cross-system conversions
+4. Phase 10C: constrained semantic types
 
 ## Definition of Done For The Remaining Plan
 
