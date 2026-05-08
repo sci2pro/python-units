@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+from core.deprecations import deprecated_call
 from core.errors import InvalidValueError, UnitCompatibilityError, UnitOperandError
 from core.unit_definitions import BaseUnit, SIUnit, clone_unit
 from models.dimension import SI_DIMENSION_SYSTEM
@@ -200,8 +201,12 @@ def float_quantity(quantity: Quantity) -> Quantity:
 
 def long_quantity(quantity: Quantity) -> Quantity:
     """Legacy compatibility helper equivalent to ``int_quantity``."""
-    require_quantity_operand(quantity, "long conversion")
-    return Quantity(int(quantity.value), quantity.unit)
+    return deprecated_call(
+        "long_quantity",
+        "int_quantity",
+        "1.0.0",
+        lambda: int_quantity(quantity),
+    )
 
 
 def complex_quantity(quantity: Quantity) -> Quantity:
@@ -210,7 +215,41 @@ def complex_quantity(quantity: Quantity) -> Quantity:
     return Quantity(complex(quantity.value), quantity.unit)
 
 
-int_unit = int_quantity
-float_unit = float_quantity
-long_unit = long_quantity
-complex_unit = complex_quantity
+def int_unit(quantity: Quantity) -> Quantity:
+    """Legacy compatibility helper equivalent to ``int_quantity``."""
+    return deprecated_call(
+        "int_unit",
+        "int_quantity",
+        "1.0.0",
+        lambda: int_quantity(quantity),
+    )
+
+
+def float_unit(quantity: Quantity) -> Quantity:
+    """Legacy compatibility helper equivalent to ``float_quantity``."""
+    return deprecated_call(
+        "float_unit",
+        "float_quantity",
+        "1.0.0",
+        lambda: float_quantity(quantity),
+    )
+
+
+def long_unit(quantity: Quantity) -> Quantity:
+    """Legacy compatibility helper equivalent to ``int_quantity``."""
+    return deprecated_call(
+        "long_unit",
+        "int_quantity",
+        "1.0.0",
+        lambda: int_quantity(quantity),
+    )
+
+
+def complex_unit(quantity: Quantity) -> Quantity:
+    """Legacy compatibility helper equivalent to ``complex_quantity``."""
+    return deprecated_call(
+        "complex_unit",
+        "complex_quantity",
+        "1.0.0",
+        lambda: complex_quantity(quantity),
+    )

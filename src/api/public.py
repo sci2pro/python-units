@@ -39,6 +39,7 @@ from core.errors import (
     UnitOperandError,
     UnitsError,
 )
+from core.deprecations import deprecated_call
 from core.quantity import (
     Quantity,
     complex_quantity,
@@ -52,8 +53,30 @@ from core.quantity import (
 )
 from core.unit_definitions import BaseUnit, CustomUnitBase, DerivedUnit, SIUnit
 from models.dimension import Dimension, DimensionSystem
+from utils.numbers import Scalar
 
-Unit = Quantity
+
+def Unit(value: Scalar, unit: BaseUnit | None = None) -> Quantity:
+    """
+    Deprecated compatibility constructor for ``Quantity``.
+
+    Args:
+        value: Numeric quantity value.
+        unit: Optional unit definition.
+
+    Returns:
+        Quantity object.
+
+    Raises:
+        InvalidValueError: If ``value`` is not numeric.
+        InvalidUnitError: If ``unit`` is not a unit definition.
+    """
+    return deprecated_call(
+        "Unit",
+        "Quantity or scalar-by-unit construction",
+        "1.0.0",
+        lambda: Quantity(value, unit),
+    )
 
 __all__ = [
     "Dimension",

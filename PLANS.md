@@ -26,11 +26,11 @@ The repository has already completed a substantial transition from the original 
 - the public API is typed
 - scalar-by-unit construction is supported as the preferred quantity-construction style
 - the dimensional model uses immutable `Dimension` objects
-- SI canonicalization is registry-backed
+- SI canonicalization is backed by a static deterministic registry
 - custom unit systems are supported through `DimensionSystem` and `CustomUnitBase`
 - the README is now the primary user-facing documentation
 
-The implementation is coherent in purpose and significantly improved over the original package. The main remaining gaps are now policy and lifecycle concerns rather than core structure.
+The implementation is coherent in purpose and significantly improved over the original package. The main remaining gaps are now higher-level unit capabilities rather than core structure.
 
 ## Alignment With `AGENTS.md`
 
@@ -48,7 +48,7 @@ The implementation is coherent in purpose and significantly improved over the or
 
 ### Still not aligned
 
-- compatibility aliases remain but do not emit deprecation warnings
+- no known structural gaps are currently tracked here
 
 ### Intentionally empty layers
 
@@ -74,7 +74,7 @@ from units.si import metre, second, newton
 
 Compatibility to preserve during the transition:
 
-- `Unit` as an alias for `Quantity`
+- `Unit` as a deprecated compatibility constructor returning `Quantity`
 - top-level re-exports such as `metre`, `second`, and `newton`
 - legacy conversion helpers until a deliberate breaking release
 
@@ -137,7 +137,7 @@ Completed work:
 
 - introduced `Quantity` as the preferred value type
 - added `units.si`
-- kept `Unit` as a compatibility alias
+- kept `Unit` as a compatibility path
 - split implementation across focused modules
 - added scalar-by-unit construction so expressions such as `3 * metre` create `Quantity` objects
 - added exponent support for unit and quantity expressions such as `5 * metre ** 3`
@@ -199,24 +199,25 @@ Completed work:
 - added integration coverage for public imports and compatibility behavior
 - updated CI and tox to run both test layers
 
-### Phase 9: Compatibility deprecation policy
+### Completed Phase 9: Compatibility deprecation policy
 
 Goal:
 
 Honor the migration plan deliberately instead of keeping compatibility aliases indefinitely.
 
-Required changes:
+Completed work:
 
-- add low-noise deprecation warnings for `Unit` and legacy helpers where appropriate
-- add tests for warning behavior
-- publish removal criteria in the README and release notes
-- decide the target breaking release for removal of deprecated paths
+- added low-noise `DeprecationWarning` behavior for `Unit` and legacy helpers
+- added tests for warning behavior
+- published removal criteria in the README and release notes
+- set `1.0.0` as the target breaking release for removing deprecated paths
+- bumped the transition release to `0.3.0`
 
-Recommended release sequence:
+Release policy:
 
-1. Keep compatibility aliases in the next transition release.
-2. Introduce warnings once the layered architecture is stable.
-3. Remove deprecated paths only in a deliberate breaking release.
+1. Keep deprecated compatibility paths available through the remaining pre-1.0 releases.
+2. Emit warnings only when deprecated paths are called.
+3. Remove deprecated paths only in the deliberate `1.0.0` breaking release unless the project explicitly changes that policy.
 
 ### Phase 10: Higher-level domain extensions
 
@@ -301,7 +302,15 @@ These helpers should be explicit and unsurprising. They should not silently conv
 
 The remaining work should be distributed across releases rather than packed into `1.0.0`.
 
-### 0.3.0: conversion foundations
+### 0.3.0: compatibility deprecation policy
+
+Recommended scope:
+
+- implement Phase 9 warnings for `Unit` and legacy helpers
+- document the migration path and `1.0.0` removal target
+- keep preferred APIs warning-free
+
+### 0.4.0: conversion foundations
 
 Recommended scope:
 
@@ -311,22 +320,22 @@ Recommended scope:
 - add top-level extractor helpers such as `value()` and `unit()`
 - document the conversion model clearly
 
-Non-goals for `0.3.0`:
+Non-goals for `0.4.0`:
 
 - full constrained semantic type hierarchy
 - large imperial coverage
 - aggressive deprecation of legacy API
 
-### 0.4.0: affine and cross-system conversions
+### 0.5.0: affine and cross-system conversions
 
 Recommended scope:
 
 - support affine conversions such as `kelvin <-> degree_celcius`
 - add the first stable non-SI named conversions, especially commonly used imperial units
-- refine conversion APIs based on `0.3.0` feedback
+- refine conversion APIs based on `0.4.0` feedback
 - add tests and documentation for mixed conversion scenarios
 
-### 0.5.0: constrained semantic types
+### 0.6.0: constrained semantic types
 
 Recommended scope:
 
@@ -335,34 +344,26 @@ Recommended scope:
 - stabilize extractor semantics where offsets and conversion scales are involved
 - expand real-world documentation around safe use of semantic quantity types
 
-### 0.6.x or 0.7.0: deprecation enforcement
+### 1.0.0: stable modern interface and deprecation enforcement
 
 Recommended scope:
-
-- implement Phase 9 fully if it has not already happened
-- emit warnings for `Unit` and other legacy compatibility paths
-- publish a clear migration deadline for the legacy API
-
-### 1.0.0: stable modern interface
-
-Target state:
 
 - modern `Quantity` plus `units.si` API is stable
 - conversion APIs are stable
 - prefixed units and supported non-SI systems are stable
 - constrained semantic types, if included, are stable
 - extractor helpers are stable
-- legacy compatibility paths are either removed or explicitly retained as part of the supported surface
+- deprecated legacy compatibility paths are removed unless explicitly retained as part of the supported surface
 - release notes clearly state what is guaranteed going forward
 
 ## Immediate Priorities
 
 The next implementation work should happen in this order:
 
-1. Phase 9: deprecation policy implementation
-2. Phase 10A: conversion foundations and extractor helpers
-3. Phase 10B: affine and cross-system conversions
-4. Phase 10C: constrained semantic types
+1. Phase 10A: conversion foundations and extractor helpers
+2. Phase 10B: affine and cross-system conversions
+3. Phase 10C: constrained semantic types
+4. `1.0.0`: remove or explicitly retain deprecated compatibility paths
 
 ## Definition of Done For The Remaining Plan
 

@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - 2026-05-08
+
+### Release notes
+
+`0.3.0` implements the compatibility deprecation policy for the modern API
+transition. Preferred code should use `Quantity`, scalar-by-unit construction,
+and the `*_quantity` conversion helpers.
+
+### Changed
+
+- Bumped the package version to `0.3.0`.
+- `Unit` is now a deprecated compatibility constructor that returns `Quantity`
+  and emits `DeprecationWarning` when called.
+- Legacy conversion helpers `int_unit`, `float_unit`, `long_unit`,
+  `complex_unit`, and `long_quantity` now emit `DeprecationWarning` when called.
+
+### Compatibility
+
+- Deprecated compatibility paths remain available in this release.
+- Deprecated compatibility paths are scheduled for removal in `1.0.0`.
+- Preferred APIs do not emit deprecation warnings.
+
 ## [0.2.0] - 2026-04-06
 
 ### Release notes
@@ -91,4 +113,3 @@ As of `0.2.0`, the project has the following characteristics:
 - implement compatibility deprecation policy
 - add low-noise warnings for legacy aliases
 - define removal timing for legacy paths in a future breaking release
-

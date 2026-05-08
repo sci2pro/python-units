@@ -1,5 +1,7 @@
 """Unit tests for quantity and unit behavior."""
 
+import warnings
+
 import pytest
 
 import units.si as si
@@ -27,6 +29,7 @@ from units import (
     katal,
     kelvin,
     kilogram,
+    long_quantity,
     long_unit,
     lumen,
     lux,
@@ -68,7 +71,11 @@ def test_new_api_imports() -> None:
 
 
 def test_legacy_api_compatibility() -> None:
-    assert Unit is Quantity
+    with pytest.warns(DeprecationWarning, match="Unit is deprecated"):
+        quantity = Unit(3, metre)
+
+    assert isinstance(quantity, Quantity)
+    assert str(quantity) == "3 m"
     assert metre is si.metre
     assert second is si.second
     assert newton is si.newton
@@ -87,7 +94,7 @@ def test_legacy_api_compatibility() -> None:
     ],
 )
 def test_si_units(unit, expected: str) -> None:
-    assert str(Unit(7, unit)) == expected
+    assert str(Quantity(7, unit)) == expected
 
 
 @pytest.mark.parametrize(
@@ -118,11 +125,11 @@ def test_si_units(unit, expected: str) -> None:
     ],
 )
 def test_derived_units(unit, expected: str) -> None:
-    assert str(Unit(7, unit)) == expected
+    assert str(Quantity(7, unit)) == expected
 
 
 def test_quantity_properties() -> None:
-    quantity = Unit(11, metre)
+    quantity = Quantity(11, metre)
     assert quantity.value == 11
     assert str(quantity.unit) == "m"
     assert str(quantity.full_units) == "11 m"
@@ -130,7 +137,7 @@ def test_quantity_properties() -> None:
 
 
 def test_scalar_operations() -> None:
-    quantity = Unit(12, metre)
+    quantity = Quantity(12, metre)
     assert str(quantity * 4) == "48 m"
     assert str(quantity / 3) == "4.0 m"
     assert str(24 / quantity) == "2.0 m^-1"
@@ -165,39 +172,39 @@ def test_power_operators() -> None:
 
 def test_invalid_operations() -> None:
     with pytest.raises(TypeError):
-        complex(Unit(1.5, metre))
+        complex(Quantity(1.5, metre))
     with pytest.raises(TypeError):
-        int(Unit(1.5, metre))
+        int(Quantity(1.5, metre))
     with pytest.raises(TypeError):
-        float(Unit(1.5, metre))
+        float(Quantity(1.5, metre))
     with pytest.raises(UnitCompatibilityError):
-        Unit(2, metre) + Unit(3, second)
+        Quantity(2, metre) + Quantity(3, second)
     with pytest.raises(UnitCompatibilityError):
-        Unit(2, metre) % Unit(3, second)
+        Quantity(2, metre) % Quantity(3, second)
     with pytest.raises(UnitOperandError):
-        Unit(2, metre) + 3
+        Quantity(2, metre) + 3
     with pytest.raises(UnitOperandError):
-        3 + Unit(2, metre)
+        3 + Quantity(2, metre)
     with pytest.raises(UnitOperandError):
-        Unit(2, metre) * object()
+        Quantity(2, metre) * object()
     with pytest.raises(UnitOperandError):
-        Unit(2, metre) // complex(2, 1)
+        Quantity(2, metre) // complex(2, 1)
     with pytest.raises(InvalidValueError):
-        Unit("3", metre)
+        Quantity("3", metre)
     with pytest.raises(InvalidUnitError):
-        Unit(3, "metre")
+        Quantity(3, "metre")
 
 
 def test_named_units_with_same_dimension_are_not_interchangeable() -> None:
     with pytest.raises(UnitCompatibilityError):
-        Unit(20, degree_celcius) + Unit(1, kelvin)
+        Quantity(20, degree_celcius) + Quantity(1, kelvin)
     with pytest.raises(UnitCompatibilityError):
-        Unit(1, radian) + Unit(1, steradian)
+        Quantity(1, radian) + Quantity(1, steradian)
 
 
 def test_unary_operators() -> None:
-    positive = Unit(9, metre)
-    negative = Unit(-9, metre)
+    positive = Quantity(9, metre)
+    negative = Quantity(-9, metre)
     assert str(-positive) == "-9 m"
     assert str(-negative) == "9 m"
     assert str(+positive) == "9 m"
@@ -207,8 +214,8 @@ def test_unary_operators() -> None:
 
 
 def test_operations_between_quantities() -> None:
-    x = Unit(9.0, metre)
-    y = Unit(4.0, metre)
+    x = Quantity(9.0, metre)
+    y = Quantity(4.0, metre)
     assert str(x + y) == "13.0 m"
     assert str(y + x) == "13.0 m"
     assert str(x - y) == "5.0 m"
@@ -223,24 +230,31 @@ def test_operations_between_quantities() -> None:
 
 
 def test_type_conversions() -> None:
-    assert str(int_unit(Unit(4.8, metre))) == "4 m"
-    assert str(float_unit(Unit(7, metre))) == "7.0 m"
-    assert str(long_unit(Unit(4.8, metre))) == "4 m"
-    assert str(complex_unit(Unit(4.8, metre))) == "(4.8+0j) m"
     assert str(int_quantity(Quantity(4.8, metre))) == "4 m"
     assert str(float_quantity(Quantity(7, metre))) == "7.0 m"
 
 
+def test_legacy_conversion_helpers_warn() -> None:
+    with pytest.warns(DeprecationWarning, match="int_unit is deprecated"):
+        assert str(int_unit(Quantity(4.8, metre))) == "4 m"
+    with pytest.warns(DeprecationWarning, match="float_unit is deprecated"):
+        assert str(float_unit(Quantity(7, metre))) == "7.0 m"
+    with pytest.warns(DeprecationWarning, match="long_unit is deprecated"):
+        assert str(long_unit(Quantity(4.8, metre))) == "4 m"
+    with pytest.warns(DeprecationWarning, match="complex_unit is deprecated"):
+        assert str(complex_unit(Quantity(4.8, metre))) == "(4.8+0j) m"
+
+
 def test_operation_derived() -> None:
-    result = Unit(6.0, newton) / Unit(2.0, radian)
+    result = Quantity(6.0, newton) / Quantity(2.0, radian)
     assert isinstance(str(result), str)
     assert result.full_units == "3.0 m·kg·s^-2"
 
 
 def test_canonical_named_unit_resolution() -> None:
-    assert str(Unit(3, watt) / Unit(1, ampere)) == "3.0 V"
-    assert str(Unit(2, newton) * Unit(5, metre)) == "10 J"
-    assert str(Unit(8, volt) / Unit(2, ampere)) == "4.0 Ω"
+    assert str(Quantity(3, watt) / Quantity(1, ampere)) == "3.0 V"
+    assert str(Quantity(2, newton) * Quantity(5, metre)) == "10 J"
+    assert str(Quantity(8, volt) / Quantity(2, ampere)) == "4.0 Ω"
 
 
 def test_canonical_unit_registry_is_static() -> None:
@@ -249,7 +263,7 @@ def test_canonical_unit_registry_is_static() -> None:
     with pytest.raises(InvalidUnitError):
         register_canonical_unit(fake_newton)
 
-    assert str(Unit(2, newton) * Unit(5, metre)) == "10 J"
+    assert str(Quantity(2, newton) * Quantity(5, metre)) == "10 J"
 
 
 def test_dimension_exponents_must_be_explicit_integers() -> None:
@@ -264,8 +278,8 @@ def test_dimension_exponents_must_be_explicit_integers() -> None:
 
 
 def test_ambiguous_dimensions_do_not_canonicalize() -> None:
-    assert str(Unit(5, SIUnit() / second)) == "5 s^-1"
-    assert str(Unit(5, joule / kilogram)) == "5 m^2·s^-2"
+    assert str(Quantity(5, SIUnit() / second)) == "5 s^-1"
+    assert str(Quantity(5, joule / kilogram)) == "5 m^2·s^-2"
 
 
 def test_custom_unit_systems() -> None:
@@ -283,22 +297,22 @@ def test_custom_unit_systems() -> None:
 
 
 def test_reverse_unit_operations() -> None:
-    x = Unit(5, metre)
-    y = Unit(14, metre)
+    x = Quantity(5, metre)
+    y = Quantity(14, metre)
     assert str(y - x) == "9 m"
     assert str(y / x) == "2.8"
 
 
 def test_unitless_values() -> None:
-    unitless = Unit(3)
+    unitless = Quantity(3)
     assert unitless.is_unitless
     assert str(unitless) == "3"
-    assert str(unitless * Unit(2, metre)) == "6 m"
-    assert str(Unit(2, metre) / unitless) == "0.6666666666666666 m"
+    assert str(unitless * Quantity(2, metre)) == "6 m"
+    assert str(Quantity(2, metre) / unitless) == "0.6666666666666666 m"
 
 
 def test_setters_and_definitions() -> None:
-    quantity = Unit(3, metre)
+    quantity = Quantity(3, metre)
     quantity.value = 4.5
     quantity.unit = second
     assert str(quantity) == "4.5 s"
@@ -314,11 +328,36 @@ def test_setters_and_definitions() -> None:
 
 
 def test_helper_rejects_invalid_operand() -> None:
-    with pytest.raises(UnitOperandError):
-        int_unit(3)
-    with pytest.raises(UnitOperandError):
-        float_unit(3)
-    with pytest.raises(UnitOperandError):
-        long_unit(3)
-    with pytest.raises(UnitOperandError):
-        complex_unit(3)
+    with pytest.warns(DeprecationWarning, match="int_unit is deprecated"):
+        with pytest.raises(UnitOperandError):
+            int_unit(3)
+    with pytest.warns(DeprecationWarning, match="float_unit is deprecated"):
+        with pytest.raises(UnitOperandError):
+            float_unit(3)
+    with pytest.warns(DeprecationWarning, match="long_unit is deprecated"):
+        with pytest.raises(UnitOperandError):
+            long_unit(3)
+    with pytest.warns(DeprecationWarning, match="complex_unit is deprecated"):
+        with pytest.raises(UnitOperandError):
+            complex_unit(3)
+
+
+def test_preferred_conversion_helpers_reject_invalid_operand_without_warning() -> None:
+    with warnings.catch_warnings(record=True) as caught_warnings:
+        with pytest.raises(UnitOperandError):
+            int_quantity(3)
+    assert not caught_warnings
+
+    with warnings.catch_warnings(record=True) as caught_warnings:
+        with pytest.raises(UnitOperandError):
+            float_quantity(3)
+    assert not caught_warnings
+
+
+def test_long_quantity_warns() -> None:
+    with pytest.warns(DeprecationWarning, match="long_quantity is deprecated"):
+        assert str(long_quantity(Quantity(4.8, metre))) == "4 m"
+
+    with pytest.warns(DeprecationWarning, match="long_quantity is deprecated"):
+        with pytest.raises(UnitOperandError):
+            long_quantity(3)
