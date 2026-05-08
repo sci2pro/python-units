@@ -13,8 +13,8 @@ and the `*_quantity` conversion helpers.
 ### Changed
 
 - Bumped the package version to `0.3.0`.
-- `Unit` is now a deprecated compatibility constructor that returns `Quantity`
-  and emits `DeprecationWarning` when called.
+- `Unit` remains a deprecated compatibility alias for `Quantity` and is
+  scheduled for removal in `1.0.0`.
 - Legacy conversion helpers `int_unit`, `float_unit`, `long_unit`,
   `complex_unit`, and `long_quantity` now emit `DeprecationWarning` when called.
 
@@ -22,6 +22,8 @@ and the `*_quantity` conversion helpers.
 
 - Deprecated compatibility paths remain available in this release.
 - Deprecated compatibility paths are scheduled for removal in `1.0.0`.
+- `Unit` remains a true alias so `Unit is Quantity` and `isinstance(value, Unit)`
+  keep working until the breaking release.
 - Preferred APIs do not emit deprecation warnings.
 
 ## [0.2.0] - 2026-04-06

@@ -71,10 +71,10 @@ def test_new_api_imports() -> None:
 
 
 def test_legacy_api_compatibility() -> None:
-    with pytest.warns(DeprecationWarning, match="Unit is deprecated"):
-        quantity = Unit(3, metre)
-
+    quantity = Unit(3, metre)
+    assert Unit is Quantity
     assert isinstance(quantity, Quantity)
+    assert isinstance(quantity, Unit)
     assert str(quantity) == "3 m"
     assert metre is si.metre
     assert second is si.second

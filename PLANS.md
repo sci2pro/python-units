@@ -74,7 +74,7 @@ from units.si import metre, second, newton
 
 Compatibility to preserve during the transition:
 
-- `Unit` as a deprecated compatibility constructor returning `Quantity`
+- `Unit = Quantity` as a deprecated compatibility alias
 - top-level re-exports such as `metre`, `second`, and `newton`
 - legacy conversion helpers until a deliberate breaking release
 
@@ -207,7 +207,7 @@ Honor the migration plan deliberately instead of keeping compatibility aliases i
 
 Completed work:
 
-- added low-noise `DeprecationWarning` behavior for `Unit` and legacy helpers
+- added low-noise `DeprecationWarning` behavior for legacy helper functions
 - added tests for warning behavior
 - published removal criteria in the README and release notes
 - set `1.0.0` as the target breaking release for removing deprecated paths
@@ -216,8 +216,9 @@ Completed work:
 Release policy:
 
 1. Keep deprecated compatibility paths available through the remaining pre-1.0 releases.
-2. Emit warnings only when deprecated paths are called.
-3. Remove deprecated paths only in the deliberate `1.0.0` breaking release unless the project explicitly changes that policy.
+2. Emit warnings only when deprecated helper functions are called.
+3. Keep `Unit is Quantity` true until `1.0.0`; `Unit` is documented as deprecated but does not emit a call-time warning because doing so would break type identity before the breaking release.
+4. Remove deprecated paths only in the deliberate `1.0.0` breaking release unless the project explicitly changes that policy.
 
 ### Phase 10: Higher-level domain extensions
 
@@ -306,9 +307,10 @@ The remaining work should be distributed across releases rather than packed into
 
 Recommended scope:
 
-- implement Phase 9 warnings for `Unit` and legacy helpers
+- implement Phase 9 warnings for legacy helper functions
 - document the migration path and `1.0.0` removal target
 - keep preferred APIs warning-free
+- preserve `Unit = Quantity` until the breaking release
 
 ### 0.4.0: conversion foundations
 

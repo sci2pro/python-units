@@ -65,10 +65,11 @@ import units as u
 print(u.Unit(1, u.metre))
 ```
 
-The legacy `Unit` constructor remains available as a compatibility constructor
-returning `Quantity` during the migration period and now emits a
-`DeprecationWarning` when called. New code should prefer
-`from units import Quantity` and `from units.si import ...`.
+The legacy `Unit` constructor remains available as a compatibility alias for
+`Quantity` during the migration period. It is deprecated and scheduled for
+removal in `1.0.0`, but it remains a true alias until then so existing type
+checks keep working. New code should prefer `from units import Quantity` and
+`from units.si import ...`.
 
 The package is Python 3-only. Python 2 compatibility behavior is not part of the
 supported interface.
@@ -129,7 +130,9 @@ Legacy compatibility helpers:
 * `complex_unit`
 
 These names remain available during the migration period and emit
-`DeprecationWarning` when called. New code should prefer `Quantity`,
+`DeprecationWarning` when called. `Unit` remains a true alias for `Quantity` and
+does not emit a call-time warning, because preserving `Unit is Quantity` is part
+of the pre-`1.0.0` compatibility contract. New code should prefer `Quantity`,
 scalar-by-unit construction, and the `*_quantity` conversion helpers. The
 deprecated compatibility paths are scheduled for removal in `1.0.0`.
 
