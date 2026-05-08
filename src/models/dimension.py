@@ -31,6 +31,13 @@ class Dimension:
             raise ValueError(
                 "dimension must define {} exponents".format(len(self.system.symbols))
             )
+        for exponent in self.exponents:
+            if not isinstance(exponent, int) or isinstance(exponent, bool):
+                raise ValueError(
+                    "dimension exponents must be integers, got {}".format(
+                        type(exponent).__name__
+                    )
+                )
 
     @classmethod
     def from_mapping(
@@ -40,10 +47,29 @@ class Dimension:
     ) -> "Dimension":
         """Construct a dimension from a base-symbol mapping."""
         dimension_system = system or cls.default_system
+        unknown_symbols = set(mapping) - set(dimension_system.symbols)
+        if unknown_symbols:
+            raise ValueError(
+                "unknown dimension symbols: {}".format(", ".join(sorted(unknown_symbols)))
+            )
         return cls(
             system=dimension_system,
-            exponents=tuple(int(mapping.get(symbol, 0)) for symbol in dimension_system.symbols),
+            exponents=tuple(
+                cls._validate_exponent(mapping.get(symbol, 0))
+                for symbol in dimension_system.symbols
+            ),
         )
+
+    @staticmethod
+    def _validate_exponent(exponent: object) -> int:
+        """Return a valid exponent or raise for invalid exponent input."""
+        if not isinstance(exponent, int) or isinstance(exponent, bool):
+            raise ValueError(
+                "dimension exponents must be integers, got {}".format(
+                    type(exponent).__name__
+                )
+            )
+        return exponent
 
     def to_mapping(self) -> dict[str, int]:
         """Return a base-symbol mapping for compatibility with public APIs."""

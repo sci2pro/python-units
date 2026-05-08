@@ -4,7 +4,8 @@
 from __future__ import annotations
 
 from numbers import Number
-from typing import Dict
+from types import MappingProxyType
+from typing import Dict, Mapping
 
 from core.errors import (
     InvalidUnitError,
@@ -14,12 +15,17 @@ from core.errors import (
 )
 from models.dimension import Dimension, DimensionSystem, SI_DIMENSION_SYSTEM
 
-_CANONICAL_UNITS: dict[Dimension, "BaseUnit"] = {}
+_CANONICAL_UNITS: Mapping[Dimension, "BaseUnit"] = MappingProxyType({})
+_REGISTERED_CANONICAL_UNITS: tuple["BaseUnit", ...] = ()
 
 
 def register_canonical_unit(unit: "BaseUnit") -> None:
-    """Register a preferred unit for a canonical dimension."""
-    _CANONICAL_UNITS[unit.dimension] = unit
+    """Validate a preferred unit against the static canonical SI registry."""
+    require_unit_instance(unit)
+    if not any(registered_unit == unit for registered_unit in _REGISTERED_CANONICAL_UNITS):
+        raise InvalidUnitError(
+            "canonical units are statically defined and cannot be registered"
+        )
 
 
 def require_unit_instance(unit: object) -> None:
@@ -80,7 +86,17 @@ class BaseUnit:
         self._dimension = dimension
 
     def __eq__(self, unit2: object) -> bool:
-        return isinstance(unit2, BaseUnit) and self.dimension == unit2.dimension
+        if not isinstance(unit2, BaseUnit):
+            return False
+        if self.dimension != unit2.dimension:
+            return False
+        if isinstance(self, DerivedUnit) or isinstance(unit2, DerivedUnit):
+            return (
+                isinstance(self, DerivedUnit)
+                and isinstance(unit2, DerivedUnit)
+                and self.name == unit2.name
+            )
+        return True
 
     def _combine(self, unit2: "BaseUnit", operator_name: str) -> "BaseUnit":
         require_unit_instance(unit2)
@@ -213,3 +229,79 @@ class DerivedUnit(BaseUnit):
         if self.name:
             return self.name
         return self.full_units
+
+
+def _build_canonical_units() -> tuple[Mapping[Dimension, BaseUnit], tuple[BaseUnit, ...]]:
+    ampere = SIUnit.define("A")
+    candela = SIUnit.define("cd")
+    kelvin = SIUnit.define("K")
+    kilogram = SIUnit.define("kg")
+    metre = SIUnit.define("m")
+    mole = SIUnit.define("mol")
+    second = SIUnit.define("s")
+
+    newton = DerivedUnit.define("N", kilogram * metre / second / second)
+    pascal = DerivedUnit.define("Pa", newton / metre / metre)
+    joule = DerivedUnit.define("J", newton * metre)
+    watt = DerivedUnit.define("W", joule / second)
+    coulomb = DerivedUnit.define("C", second * ampere)
+    volt = DerivedUnit.define("V", watt / ampere)
+    farad = DerivedUnit.define("F", coulomb / volt)
+    ohm = DerivedUnit.define("Ω", volt / ampere)
+    siemens = DerivedUnit.define("S", ampere / volt)
+    weber = DerivedUnit.define("Wb", volt * second)
+    tesla = DerivedUnit.define("T", weber / metre / metre)
+    henry = DerivedUnit.define("H", weber / ampere)
+    steradian = DerivedUnit.define("sr", metre * metre / metre / metre)
+    lumen = DerivedUnit.define("lm", candela * steradian)
+    lux = DerivedUnit.define("lx", lumen / metre / metre)
+
+    registered_units = (
+        ampere,
+        candela,
+        kelvin,
+        kilogram,
+        metre,
+        mole,
+        second,
+        newton,
+        pascal,
+        joule,
+        watt,
+        coulomb,
+        volt,
+        farad,
+        ohm,
+        siemens,
+        weber,
+        tesla,
+        henry,
+        lumen,
+        lux,
+    )
+    preferred_units = (
+        ampere,
+        kelvin,
+        kilogram,
+        metre,
+        mole,
+        second,
+        newton,
+        pascal,
+        joule,
+        watt,
+        coulomb,
+        volt,
+        farad,
+        ohm,
+        siemens,
+        weber,
+        tesla,
+        henry,
+        lumen,
+        lux,
+    )
+    return MappingProxyType({unit.dimension: unit for unit in preferred_units}), registered_units
+
+
+_CANONICAL_UNITS, _REGISTERED_CANONICAL_UNITS = _build_canonical_units()

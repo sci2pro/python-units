@@ -5,6 +5,7 @@ import pytest
 import units.si as si
 from units import (
     CustomUnitBase,
+    DerivedUnit,
     Quantity,
     SIUnit,
     Unit,
@@ -44,13 +45,14 @@ from units import (
     watt,
     weber,
 )
-from units.dimension import DimensionSystem
+from units.dimension import Dimension, DimensionSystem
 from units.errors import (
     InvalidUnitError,
     InvalidValueError,
     UnitCompatibilityError,
     UnitOperandError,
 )
+from units.unit import register_canonical_unit
 
 
 def test_new_api_imports() -> None:
@@ -186,6 +188,13 @@ def test_invalid_operations() -> None:
         Unit(3, "metre")
 
 
+def test_named_units_with_same_dimension_are_not_interchangeable() -> None:
+    with pytest.raises(UnitCompatibilityError):
+        Unit(20, degree_celcius) + Unit(1, kelvin)
+    with pytest.raises(UnitCompatibilityError):
+        Unit(1, radian) + Unit(1, steradian)
+
+
 def test_unary_operators() -> None:
     positive = Unit(9, metre)
     negative = Unit(-9, metre)
@@ -232,6 +241,26 @@ def test_canonical_named_unit_resolution() -> None:
     assert str(Unit(3, watt) / Unit(1, ampere)) == "3.0 V"
     assert str(Unit(2, newton) * Unit(5, metre)) == "10 J"
     assert str(Unit(8, volt) / Unit(2, ampere)) == "4.0 Ω"
+
+
+def test_canonical_unit_registry_is_static() -> None:
+    fake_newton = DerivedUnit.define("fake", kilogram * metre / second / second)
+
+    with pytest.raises(InvalidUnitError):
+        register_canonical_unit(fake_newton)
+
+    assert str(Unit(2, newton) * Unit(5, metre)) == "10 J"
+
+
+def test_dimension_exponents_must_be_explicit_integers() -> None:
+    with pytest.raises(ValueError):
+        Dimension.from_mapping({"m": 1.9})
+    with pytest.raises(ValueError):
+        Dimension.from_mapping({"m": True})
+    with pytest.raises(ValueError):
+        Dimension.from_mapping({"unknown": 1})
+    with pytest.raises(ValueError):
+        Dimension(exponents=(0, 0, 0, 0, 1.5, 0, 0))
 
 
 def test_ambiguous_dimensions_do_not_canonicalize() -> None:
