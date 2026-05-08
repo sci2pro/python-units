@@ -2,6 +2,46 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] - 2026-05-08
+
+### Release notes
+
+`0.4.0` introduces the first Phase 10 conversion foundations. The release adds
+explicit scale-only conversions, common SI-prefixed units, and small extractor
+helpers while preserving the strict unit-compatibility rules for arithmetic.
+
+### Added
+
+- `Quantity.to(target_unit)` for explicit same-dimension multiplicative
+  conversions.
+- `convert(quantity, target_unit)` as a helper equivalent to
+  `quantity.to(target_unit)`.
+- Extractor helpers:
+  - `value(quantity)`
+  - `unit(quantity)`
+  - `multiplier(quantity_or_unit)`
+- Common prefixed and scaled units:
+  - length: `kilometre`, `centimetre`, `millimetre`, `micrometre`, `nanometre`
+  - mass: `gram`, `milligram`, `microgram`, `tonne`
+  - time: `minute`, `hour`, `millisecond`, `microsecond`, `nanosecond`
+  - electrical and power units: `milliampere`, `kiloampere`, `millivolt`,
+    `kilovolt`, `milliwatt`, `kilowatt`, `megawatt`
+
+### Changed
+
+- Multiplication, division, and powers now account for unit conversion factors
+  so scaled-unit arithmetic produces canonical base magnitudes.
+- Composite scaled-unit arithmetic renders in canonical SI dimensions to avoid
+  silently displaying scaled values as base units.
+
+### Compatibility
+
+- Addition, subtraction, and modulo still require identical units.
+- Affine conversions such as `degree_celcius <-> kelvin` remain out of scope
+  until the next conversion phase.
+- Deprecated compatibility helpers from `0.3.0` remain available with
+  `DeprecationWarning`.
+
 ## [0.3.0] - 2026-05-08
 
 ### Release notes

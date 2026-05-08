@@ -29,13 +29,42 @@ siemens = DerivedUnit.define("S", ampere / volt)
 weber = DerivedUnit.define("Wb", volt * second)
 tesla = DerivedUnit.define("T", weber / metre / metre)
 henry = DerivedUnit.define("H", weber / ampere)
-degree_celcius = DerivedUnit.define("°C", kelvin)
+degree_celcius = DerivedUnit.define(
+    "°C",
+    kelvin,
+    supports_multiplicative_conversion=False,
+)
 lumen = DerivedUnit.define("lm", candela * steradian)
 lux = DerivedUnit.define("lx", lumen / metre / metre)
 becquerel = DerivedUnit.define("Bq", SIUnit() / second)
 gray = DerivedUnit.define("Gy", joule / kilogram)
 sievert = DerivedUnit.define("Sv", joule / kilogram)
 katal = DerivedUnit.define("kat", mole / second)
+
+kilometre = DerivedUnit.define("km", metre, conversion_factor=1000.0)
+centimetre = DerivedUnit.define("cm", metre, conversion_factor=0.01)
+millimetre = DerivedUnit.define("mm", metre, conversion_factor=0.001)
+micrometre = DerivedUnit.define("µm", metre, conversion_factor=0.000001)
+nanometre = DerivedUnit.define("nm", metre, conversion_factor=0.000000001)
+
+gram = DerivedUnit.define("g", kilogram, conversion_factor=0.001)
+milligram = DerivedUnit.define("mg", kilogram, conversion_factor=0.000001)
+microgram = DerivedUnit.define("µg", kilogram, conversion_factor=0.000000001)
+tonne = DerivedUnit.define("t", kilogram, conversion_factor=1000.0)
+
+minute = DerivedUnit.define("min", second, conversion_factor=60.0)
+hour = DerivedUnit.define("h", second, conversion_factor=3600.0)
+millisecond = DerivedUnit.define("ms", second, conversion_factor=0.001)
+microsecond = DerivedUnit.define("µs", second, conversion_factor=0.000001)
+nanosecond = DerivedUnit.define("ns", second, conversion_factor=0.000000001)
+
+milliampere = DerivedUnit.define("mA", ampere, conversion_factor=0.001)
+kiloampere = DerivedUnit.define("kA", ampere, conversion_factor=1000.0)
+millivolt = DerivedUnit.define("mV", volt, conversion_factor=0.001)
+kilovolt = DerivedUnit.define("kV", volt, conversion_factor=1000.0)
+milliwatt = DerivedUnit.define("mW", watt, conversion_factor=0.001)
+kilowatt = DerivedUnit.define("kW", watt, conversion_factor=1000.0)
+megawatt = DerivedUnit.define("MW", watt, conversion_factor=1000000.0)
 
 for unit in (
     newton,
@@ -59,20 +88,40 @@ __all__ = [
     "ampere",
     "becquerel",
     "candela",
+    "centimetre",
     "coulomb",
     "degree_celcius",
     "farad",
+    "gram",
     "gray",
     "henry",
     "hertz",
+    "hour",
     "joule",
     "katal",
     "kelvin",
     "kilogram",
+    "kiloampere",
+    "kilometre",
+    "kilovolt",
+    "kilowatt",
     "lumen",
     "lux",
+    "megawatt",
     "metre",
+    "microgram",
+    "micrometre",
+    "microsecond",
+    "milliampere",
+    "milligram",
+    "millimetre",
+    "millisecond",
+    "millivolt",
+    "milliwatt",
+    "minute",
     "mole",
+    "nanometre",
+    "nanosecond",
     "newton",
     "ohm",
     "pascal",
@@ -82,6 +131,7 @@ __all__ = [
     "sievert",
     "steradian",
     "tesla",
+    "tonne",
     "volt",
     "watt",
     "weber",

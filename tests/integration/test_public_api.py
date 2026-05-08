@@ -25,3 +25,17 @@ def test_public_quantity_construction_and_custom_units() -> None:
 
     assert isinstance(3 * units.metre, CoreQuantity)
     assert str(rate) == "8.0 b·s^-1"
+
+
+def test_public_conversion_api() -> None:
+    import units.unit as unit_module
+
+    distance = 1.5 * units.kilometre
+
+    assert str(distance.to(units.metre)) == "1500 m"
+    assert str(units.convert(2500 * units.metre, units.kilometre)) == "2.5 km"
+    assert units.value(distance) == 1.5
+    assert units.unit(distance) == units.kilometre
+    assert unit_module(distance) == units.kilometre
+    assert units.multiplier(units.kilometre) == 1000.0
+    assert units_si.kilometre is units.kilometre

@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from numbers import Number
+from numbers import Number, Real
 from types import MappingProxyType
 from typing import Dict, Mapping
 
@@ -36,13 +36,50 @@ def require_unit_instance(unit: object) -> None:
         )
 
 
+def validate_conversion_factor(conversion_factor: object) -> float:
+    """Validate a multiplicative conversion factor and return it as float."""
+    if (
+        not isinstance(conversion_factor, Real)
+        or isinstance(conversion_factor, bool)
+        or conversion_factor <= 0
+    ):
+        raise InvalidValueError(
+            "conversion factor must be a positive real scalar, got {}".format(
+                type(conversion_factor).__name__
+            )
+        )
+    return float(conversion_factor)
+
+
+def validate_conversion_support(supports_conversion: object) -> bool:
+    """Validate a conversion support flag and return it."""
+    if not isinstance(supports_conversion, bool):
+        raise InvalidValueError(
+            "conversion support flag must be bool, got {}".format(
+                type(supports_conversion).__name__
+            )
+        )
+    return supports_conversion
+
+
 def clone_unit(unit: "BaseUnit | None") -> "BaseUnit":
     """Clone a unit definition while preserving its type."""
     if unit is None:
         return SIUnit()
     require_unit_instance(unit)
 
-    cloned_unit = unit.__class__(dimension=unit.dimension)
+    try:
+        cloned_unit = unit.__class__(
+            dimension=unit.dimension,
+            conversion_factor=unit.conversion_factor,
+            supports_multiplicative_conversion=unit.supports_multiplicative_conversion,
+        )
+    except TypeError:
+        cloned_unit = unit.__class__(dimension=unit.dimension)
+        cloned_unit._conversion_factor = unit.conversion_factor
+        cloned_unit._supports_multiplicative_conversion = (
+            unit.supports_multiplicative_conversion
+        )
     if isinstance(unit, DerivedUnit):
         cloned_unit.name = unit.name
     return cloned_unit
@@ -61,10 +98,19 @@ class BaseUnit:
 
     dimension_system = SI_DIMENSION_SYSTEM
 
-    def __init__(self, dimension: Dimension | None = None) -> None:
+    def __init__(
+        self,
+        dimension: Dimension | None = None,
+        conversion_factor: float = 1.0,
+        supports_multiplicative_conversion: bool = True,
+    ) -> None:
         self._dimension = dimension or Dimension(
             system=self.dimension_system,
             exponents=(0,) * len(self.dimension_system.symbols),
+        )
+        self._conversion_factor = validate_conversion_factor(conversion_factor)
+        self._supports_multiplicative_conversion = validate_conversion_support(
+            supports_multiplicative_conversion
         )
 
     @property
@@ -85,16 +131,32 @@ class BaseUnit:
     def dimension(self, dimension: Dimension) -> None:
         self._dimension = dimension
 
+    @property
+    def conversion_factor(self) -> float:
+        """Return the multiplicative factor to this dimension's base unit."""
+        return self._conversion_factor
+
+    @property
+    def supports_multiplicative_conversion(self) -> bool:
+        """Return whether this unit can use scale-only conversion."""
+        return self._supports_multiplicative_conversion
+
     def __eq__(self, unit2: object) -> bool:
         if not isinstance(unit2, BaseUnit):
             return False
         if self.dimension != unit2.dimension:
+            return False
+        if self.conversion_factor != unit2.conversion_factor:
             return False
         if isinstance(self, DerivedUnit) or isinstance(unit2, DerivedUnit):
             return (
                 isinstance(self, DerivedUnit)
                 and isinstance(unit2, DerivedUnit)
                 and self.name == unit2.name
+                and (
+                    self.supports_multiplicative_conversion
+                    == unit2.supports_multiplicative_conversion
+                )
             )
         return True
 
@@ -109,15 +171,48 @@ class BaseUnit:
             )
         if operator_name == "mul":
             dimension = self.dimension * unit2.dimension
+            conversion_factor = self.conversion_factor * unit2.conversion_factor
         else:
             dimension = self.dimension / unit2.dimension
+            conversion_factor = self.conversion_factor / unit2.conversion_factor
+        supports_conversion = (
+            self.supports_multiplicative_conversion
+            and unit2.supports_multiplicative_conversion
+        )
         if dimension.system != SI_DIMENSION_SYSTEM:
-            return self.__class__(dimension=dimension)
-        return resolve_unit(dimension)
+            return self.__class__(
+                dimension=dimension,
+                conversion_factor=conversion_factor,
+                supports_multiplicative_conversion=supports_conversion,
+            )
+        if supports_conversion and conversion_factor == 1.0:
+            return resolve_unit(dimension)
+        return BaseUnit(
+            dimension=dimension,
+            conversion_factor=conversion_factor,
+            supports_multiplicative_conversion=supports_conversion,
+        )
 
     def _quantity_from_scalar(self, value: Number) -> object:
-        from core.quantity import Quantity
+        from core.quantity import Quantity, normalize_scalar
 
+        if not isinstance(self, DerivedUnit) and self.conversion_factor != 1.0:
+            try:
+                unit = self.__class__(
+                    dimension=self.dimension,
+                    supports_multiplicative_conversion=(
+                        self.supports_multiplicative_conversion
+                    ),
+                )
+            except TypeError:
+                unit = self.__class__(dimension=self.dimension)
+                unit._supports_multiplicative_conversion = (
+                    self.supports_multiplicative_conversion
+                )
+            result_value = value * self.conversion_factor
+            if self.conversion_factor.is_integer():
+                result_value = normalize_scalar(result_value)
+            return Quantity(result_value, unit)
         return Quantity(value, self)
 
     def __mul__(self, unit2: object) -> object:
@@ -152,13 +247,37 @@ class BaseUnit:
             system=self.dimension.system,
             exponents=tuple(value * exponent for value in self.dimension.exponents),
         )
-        if isinstance(self, DerivedUnit) and self.name and exponent != 1:
-            derived = DerivedUnit(dimension=dimension)
+        conversion_factor = self.conversion_factor**exponent
+        if (
+            isinstance(self, DerivedUnit)
+            and self.name
+            and exponent != 1
+            and self.conversion_factor == 1.0
+        ):
+            derived = DerivedUnit(
+                dimension=dimension,
+                conversion_factor=1.0,
+                supports_multiplicative_conversion=(
+                    self.supports_multiplicative_conversion
+                ),
+            )
             derived.name = "{}^{}".format(self.name, exponent)
             return derived
         if dimension.system != SI_DIMENSION_SYSTEM:
-            return self.__class__(dimension=dimension)
-        return resolve_unit(dimension)
+            return self.__class__(
+                dimension=dimension,
+                conversion_factor=conversion_factor,
+                supports_multiplicative_conversion=(
+                    self.supports_multiplicative_conversion
+                ),
+            )
+        if self.supports_multiplicative_conversion and conversion_factor == 1.0:
+            return resolve_unit(dimension)
+        return BaseUnit(
+            dimension=dimension,
+            conversion_factor=conversion_factor,
+            supports_multiplicative_conversion=self.supports_multiplicative_conversion,
+        )
 
     def __str__(self) -> str:
         return self.dimension.render()
@@ -168,7 +287,12 @@ class SIUnit(BaseUnit):
     """Template class for SI units."""
 
     @classmethod
-    def define(cls, key: str, value: int = 1) -> "SIUnit":
+    def define(
+        cls,
+        key: str,
+        value: int = 1,
+        conversion_factor: float = 1.0,
+    ) -> "SIUnit":
         """Define an SI unit or exponentiated SI dimension."""
         if key not in cls.dimension_system.symbols:
             raise InvalidUnitError("unknown SI unit key: {}".format(key))
@@ -176,7 +300,10 @@ class SIUnit(BaseUnit):
             raise InvalidValueError(
                 "unit exponent must be an integer, got {}".format(type(value).__name__)
             )
-        return cls(dimension=Dimension.from_mapping({key: value}, system=cls.dimension_system))
+        return cls(
+            dimension=Dimension.from_mapping({key: value}, system=cls.dimension_system),
+            conversion_factor=conversion_factor,
+        )
 
 
 class CustomUnitBase(BaseUnit):
@@ -185,7 +312,12 @@ class CustomUnitBase(BaseUnit):
     dimension_system = DimensionSystem("custom", ())
 
     @classmethod
-    def define(cls, key: str, value: int = 1) -> "CustomUnitBase":
+    def define(
+        cls,
+        key: str,
+        value: int = 1,
+        conversion_factor: float = 1.0,
+    ) -> "CustomUnitBase":
         """Define a custom base unit within the subclass dimension system."""
         if key not in cls.dimension_system.symbols:
             raise InvalidUnitError("unknown custom unit key: {}".format(key))
@@ -193,7 +325,10 @@ class CustomUnitBase(BaseUnit):
             raise InvalidValueError(
                 "unit exponent must be an integer, got {}".format(type(value).__name__)
             )
-        return cls(dimension=Dimension.from_mapping({key: value}, system=cls.dimension_system))
+        return cls(
+            dimension=Dimension.from_mapping({key: value}, system=cls.dimension_system),
+            conversion_factor=conversion_factor,
+        )
 
 
 class DerivedUnit(BaseUnit):
@@ -218,10 +353,28 @@ class DerivedUnit(BaseUnit):
         return super().__str__()
 
     @classmethod
-    def define(cls, name: str, unit: BaseUnit) -> "DerivedUnit":
+    def define(
+        cls,
+        name: str,
+        unit: BaseUnit,
+        conversion_factor: float | None = None,
+        supports_multiplicative_conversion: bool | None = None,
+    ) -> "DerivedUnit":
         """Define a named derived unit."""
         require_unit_instance(unit)
-        obj = cls(dimension=unit.dimension)
+        obj = cls(
+            dimension=unit.dimension,
+            conversion_factor=(
+                unit.conversion_factor
+                if conversion_factor is None
+                else conversion_factor
+            ),
+            supports_multiplicative_conversion=(
+                unit.supports_multiplicative_conversion
+                if supports_multiplicative_conversion is None
+                else supports_multiplicative_conversion
+            ),
+        )
         obj.name = name
         return obj
 

@@ -14,27 +14,36 @@ from units import (
     ampere,
     becquerel,
     candela,
+    centimetre,
+    convert,
     coulomb,
     complex_unit,
     degree_celcius,
     farad,
     float_quantity,
     float_unit,
+    gram,
     gray,
     henry,
     hertz,
+    hour,
     int_quantity,
     int_unit,
     joule,
     katal,
     kelvin,
     kilogram,
+    kilometre,
     long_quantity,
     long_unit,
     lumen,
     lux,
     metre,
+    millimetre,
+    minute,
     mole,
+    multiplier,
+    nanometre,
     newton,
     ohm,
     pascal,
@@ -44,6 +53,8 @@ from units import (
     sievert,
     steradian,
     tesla,
+    unit,
+    value,
     volt,
     watt,
     weber,
@@ -255,6 +266,67 @@ def test_canonical_named_unit_resolution() -> None:
     assert str(Quantity(3, watt) / Quantity(1, ampere)) == "3.0 V"
     assert str(Quantity(2, newton) * Quantity(5, metre)) == "10 J"
     assert str(Quantity(8, volt) / Quantity(2, ampere)) == "4.0 Ω"
+
+
+def test_explicit_multiplicative_conversions() -> None:
+    assert str((1.5 * kilometre).to(metre)) == "1500 m"
+    assert str(convert(2500 * metre, kilometre)) == "2.5 km"
+    assert str((120 * second).to(minute)) == "2 min"
+    assert str((2 * hour).to(minute)) == "120 min"
+    assert str((1500 * gram).to(kilogram)) == "1.5 kg"
+    assert str((12 * millimetre).to(centimetre)) == "1.2 cm"
+    assert str((500000000 * nanometre).to(metre)) == "0.5 m"
+
+
+def test_conversion_requires_compatible_units() -> None:
+    with pytest.raises(UnitCompatibilityError):
+        (1 * metre).to(second)
+    with pytest.raises(UnitCompatibilityError):
+        (20 * degree_celcius).to(kelvin)
+    with pytest.raises(InvalidUnitError):
+        (1 * metre).to("metre")
+    with pytest.raises(InvalidValueError):
+        DerivedUnit.define("bad", metre, conversion_factor=0)
+    with pytest.raises(InvalidValueError):
+        DerivedUnit.define(
+            "bad",
+            metre,
+            supports_multiplicative_conversion="yes",
+        )
+
+
+def test_scaled_unit_arithmetic_uses_base_magnitudes() -> None:
+    assert str((2 * kilometre) * (3 * metre)) == "6000 m^2"
+    assert str((2 * kilometre) * metre) == "2000 m^2"
+    assert str((2 * kilometre) / metre) == "2000"
+    assert str(1 / (2 * kilometre)) == "0.0005 m^-1"
+    assert str(1 // (2 * kilometre)) == "0.0 m^-1"
+    assert str(5000 // (2 * kilometre)) == "2.0 m^-1"
+    assert str(5001 % (2 * kilometre)) == "1001 m^-1"
+    assert str((2 * kilometre) ** 2) == "4000000 m^2"
+    speed = (72 * kilometre) / (2 * hour)
+    assert str(speed) == "10.0 m·s^-1"
+
+
+def test_scaled_unit_only_expressions_preserve_magnitudes() -> None:
+    assert str(72 * (kilometre / hour)) == "20.0 m·s^-1"
+    assert str(5 * (kilometre**2)) == "5000000 m^2"
+    assert str(3 * (kilometre * kilometre)) == "3000000 m^2"
+
+
+def test_extractor_helpers_are_explicit() -> None:
+    distance = 2.5 * kilometre
+    assert value(distance) == 2.5
+    assert unit(distance) == kilometre
+    assert multiplier(distance) == 1000.0
+    assert multiplier(kilometre) == 1000.0
+
+    with pytest.raises(UnitOperandError):
+        value(kilometre)
+    with pytest.raises(UnitOperandError):
+        unit(kilometre)
+    with pytest.raises(UnitOperandError):
+        multiplier(object())
 
 
 def test_canonical_unit_registry_is_static() -> None:

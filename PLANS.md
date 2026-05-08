@@ -269,29 +269,32 @@ The design principle is:
 
 Unit conversion should be treated as a first-class feature, not as part of constrained domain types.
 
-The conversion roadmap should include:
+Completed in `0.4.0`:
 
-- same-dimension conversions within SI scales
+- same-dimension scale-only conversions within SI scales
   - `metre <-> kilometre`
   - `second <-> minute`
   - `gram <-> kilogram`
-- affine conversions where offsets matter
-  - `kelvin <-> degree_celcius`
 - prefixed-unit support
   - `milli`, `kilo`, `mega`, `micro`, `nano`, `pico`
-- additional named unit systems
-  - imperial units such as `inch`, `foot`, `mile`, `pound`, `fahrenheit`
 - explicit conversion entry points
   - method-based APIs such as `quantity.to(kilometre)`
-  - helper-based APIs where appropriate
+  - helper-based APIs such as `convert(quantity, kilometre)`
 
-This should be modeled explicitly in unit definitions, most likely by introducing scale and optional offset metadata rather than relying on dimensional equivalence alone.
+Remaining conversion roadmap:
 
-### Phase 10 detail: extractor helpers
+- affine conversions where offsets matter
+  - `kelvin <-> degree_celcius`
+- additional named unit systems
+  - imperial units such as `inch`, `foot`, `mile`, `pound`, `fahrenheit`
 
-The package should eventually expose small top-level helpers that let users deliberately strip structure from a quantity.
+This is now modeled explicitly with scale metadata on unit definitions. Future affine conversions should add offset metadata rather than relying on dimensional equivalence alone.
 
-Candidate helpers:
+### Completed Phase 10 detail: extractor helpers
+
+The package exposes small top-level helpers that let users deliberately strip structure from a quantity.
+
+Completed helpers:
 
 - `value(quantity)` -> numeric magnitude
 - `unit(quantity)` -> unit definition
@@ -312,9 +315,9 @@ Recommended scope:
 - keep preferred APIs warning-free
 - preserve `Unit = Quantity` until the breaking release
 
-### 0.4.0: conversion foundations
+### Completed 0.4.0: conversion foundations
 
-Recommended scope:
+Completed scope:
 
 - introduce conversion metadata on unit definitions
 - add explicit same-dimension conversions for straightforward multiplicative units
@@ -362,10 +365,9 @@ Recommended scope:
 
 The next implementation work should happen in this order:
 
-1. Phase 10A: conversion foundations and extractor helpers
-2. Phase 10B: affine and cross-system conversions
-3. Phase 10C: constrained semantic types
-4. `1.0.0`: remove or explicitly retain deprecated compatibility paths
+1. Phase 10B: affine and cross-system conversions
+2. Phase 10C: constrained semantic types
+3. `1.0.0`: remove or explicitly retain deprecated compatibility paths
 
 ## Definition of Done For The Remaining Plan
 

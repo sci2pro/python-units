@@ -11,12 +11,16 @@ from .quantity import (
     Quantity,
     complex_quantity,
     complex_unit,
+    convert,
     float_quantity,
     float_unit,
     int_quantity,
     int_unit,
     long_quantity,
     long_unit,
+    multiplier,
+    unit,
+    value,
 )
 from .unit_definitions import BaseUnit, CustomUnitBase, DerivedUnit, SIUnit
 
@@ -33,10 +37,14 @@ __all__ = [
     "UnitsError",
     "complex_quantity",
     "complex_unit",
+    "convert",
     "float_quantity",
     "float_unit",
     "int_quantity",
     "int_unit",
     "long_quantity",
     "long_unit",
+    "multiplier",
+    "unit",
+    "value",
 ]

@@ -5,7 +5,13 @@ from __future__ import annotations
 
 from core.deprecations import deprecated_call
 from core.errors import InvalidValueError, UnitCompatibilityError, UnitOperandError
-from core.unit_definitions import BaseUnit, SIUnit, clone_unit
+from core.unit_definitions import (
+    BaseUnit,
+    DerivedUnit,
+    SIUnit,
+    clone_unit,
+    require_unit_instance,
+)
 from models.dimension import SI_DIMENSION_SYSTEM
 from utils.numbers import Scalar, is_number, is_real_number, validate_numeric_value
 
@@ -16,6 +22,49 @@ def require_quantity_operand(operand: object, operation: str) -> None:
         raise UnitOperandError(
             "unsupported operand for {}: {}".format(operation, type(operand).__name__)
         )
+
+
+def normalize_scalar(value: Scalar) -> Scalar:
+    """Return ``int`` for exact integer floats, otherwise return ``value``."""
+    if isinstance(value, float) and value.is_integer():
+        return int(value)
+    return value
+
+
+def normalize_product(value: Scalar, left: Scalar, right: Scalar) -> Scalar:
+    """Normalize exact integer products only when both inputs were integers."""
+    if isinstance(left, int) and isinstance(right, int):
+        return normalize_scalar(value)
+    return value
+
+
+def normalize_reverse_floor(value: Scalar, denominator: "Quantity") -> Scalar:
+    """Preserve legacy int display for unscaled integer reverse floor division."""
+    if (
+        denominator.unit.conversion_factor == 1.0
+        and isinstance(denominator.value, int)
+    ):
+        return normalize_scalar(value)
+    return value
+
+
+def normalize_result_unit(result_unit: BaseUnit) -> BaseUnit:
+    """Return a renderable result unit with no hidden anonymous scale."""
+    if isinstance(result_unit, DerivedUnit) or result_unit.conversion_factor == 1.0:
+        return result_unit
+    try:
+        return result_unit.__class__(
+            dimension=result_unit.dimension,
+            supports_multiplicative_conversion=(
+                result_unit.supports_multiplicative_conversion
+            ),
+        )
+    except TypeError:
+        unit = result_unit.__class__(dimension=result_unit.dimension)
+        unit._supports_multiplicative_conversion = (
+            result_unit.supports_multiplicative_conversion
+        )
+        return unit
 
 
 class Quantity:
@@ -81,6 +130,44 @@ class Quantity:
                 "unsupported scalar for {}: {}".format(operation, type(value).__name__)
             )
 
+    def _base_value(self) -> Scalar:
+        return self.value * self.unit.conversion_factor
+
+    def to(self, target_unit: BaseUnit) -> "Quantity":
+        """
+        Convert this quantity to a compatible scale-only target unit.
+
+        Args:
+            target_unit: Unit definition with the same dimension.
+
+        Returns:
+            Quantity expressed in ``target_unit``.
+
+        Raises:
+            InvalidUnitError: If ``target_unit`` is not a unit definition.
+            UnitCompatibilityError: If dimensions differ or either unit cannot
+                be converted with a multiplicative scale factor.
+        """
+        require_unit_instance(target_unit)
+        if self.unit.dimension != target_unit.dimension:
+            raise UnitCompatibilityError(
+                "cannot convert {} to {}".format(self.unit, target_unit)
+            )
+        if (
+            not self.unit.supports_multiplicative_conversion
+            or not target_unit.supports_multiplicative_conversion
+        ):
+            raise UnitCompatibilityError(
+                "units require a non-multiplicative conversion: {} and {}".format(
+                    self.unit,
+                    target_unit,
+                )
+            )
+        return self.__class__(
+            normalize_scalar(self._base_value() / target_unit.conversion_factor),
+            target_unit,
+        )
+
     def __add__(self, quantity2: object) -> "Quantity":
         self._require_compatible_quantity(quantity2, "addition")
         return self.__class__(self.value + quantity2.value, self.unit)
@@ -98,9 +185,22 @@ class Quantity:
 
     def __mul__(self, quantity2: object) -> "Quantity":
         if isinstance(quantity2, Quantity):
-            return self.__class__(self.value * quantity2.value, self.unit * quantity2.unit)
+            result_unit = self.unit * quantity2.unit
+            result_value = self._base_value() * quantity2._base_value()
+            return self.__class__(
+                normalize_product(result_value, self.value, quantity2.value),
+                normalize_result_unit(result_unit),
+            )
         if isinstance(quantity2, BaseUnit):
-            return self.__class__(self.value, self.unit * quantity2)
+            result_unit = self.unit * quantity2
+            result_value = (
+                self._base_value()
+                * quantity2.conversion_factor
+            )
+            return self.__class__(
+                normalize_scalar(result_value),
+                normalize_result_unit(result_unit),
+            )
         self._require_numeric_scalar(quantity2, "multiplication")
         return self.__class__(self.value * quantity2, self.unit)
 
@@ -109,29 +209,55 @@ class Quantity:
 
     def __truediv__(self, quantity2: object) -> "Quantity":
         if isinstance(quantity2, Quantity):
-            return self.__class__(self.value / quantity2.value, self.unit / quantity2.unit)
+            result_unit = self.unit / quantity2.unit
+            result_value = self._base_value() / quantity2._base_value()
+            return self.__class__(result_value, normalize_result_unit(result_unit))
         if isinstance(quantity2, BaseUnit):
-            return self.__class__(self.value, self.unit / quantity2)
+            result_unit = self.unit / quantity2
+            result_value = (
+                self._base_value()
+                / quantity2.conversion_factor
+            )
+            return self.__class__(
+                normalize_scalar(result_value),
+                normalize_result_unit(result_unit),
+            )
         self._require_numeric_scalar(quantity2, "division")
         return self.__class__(self.value / quantity2, self.unit)
 
     def __rtruediv__(self, quantity2: object) -> "Quantity":
         if isinstance(quantity2, Quantity):
-            return self.__class__(quantity2.value / self.value, quantity2.unit / self.unit)
+            result_unit = quantity2.unit / self.unit
+            result_value = quantity2._base_value() / self._base_value()
+            return self.__class__(result_value, normalize_result_unit(result_unit))
         self._require_numeric_scalar(quantity2, "division")
-        return self.__class__(quantity2 / self.value, self._dimensionless_unit() / self.unit)
+        result_unit = self._dimensionless_unit() / self.unit
+        result_value = quantity2 / self._base_value()
+        return self.__class__(result_value, normalize_result_unit(result_unit))
 
     def __floordiv__(self, quantity2: object) -> "Quantity":
         if isinstance(quantity2, Quantity):
-            return self.__class__(self.value // quantity2.value, self.unit / quantity2.unit)
+            result_unit = self.unit / quantity2.unit
+            result_value = self._base_value() // quantity2._base_value()
+            return self.__class__(result_value, normalize_result_unit(result_unit))
         self._require_real_scalar(quantity2, "floor division")
         return self.__class__(self.value // quantity2, self.unit)
 
     def __rfloordiv__(self, quantity2: object) -> "Quantity":
         if isinstance(quantity2, Quantity):
-            return self.__class__(quantity2.value // self.value, quantity2.unit / self.unit)
+            result_unit = quantity2.unit / self.unit
+            result_value = quantity2._base_value() // self._base_value()
+            return self.__class__(
+                normalize_scalar(result_value),
+                normalize_result_unit(result_unit),
+            )
         self._require_real_scalar(quantity2, "floor division")
-        return self.__class__(quantity2 // self.value, self._dimensionless_unit() / self.unit)
+        result_unit = self._dimensionless_unit() / self.unit
+        result_value = quantity2 // self._base_value()
+        return self.__class__(
+            normalize_reverse_floor(result_value, self),
+            normalize_result_unit(result_unit),
+        )
 
     def __mod__(self, quantity2: object) -> "Quantity":
         if isinstance(quantity2, Quantity):
@@ -145,7 +271,12 @@ class Quantity:
             self._require_compatible_quantity(quantity2, "modulo")
             return self.__class__(quantity2.value % self.value, self.unit)
         self._require_real_scalar(quantity2, "modulo")
-        return self.__class__(quantity2 % self.value, self._dimensionless_unit() / self.unit)
+        result_unit = self._dimensionless_unit() / self.unit
+        result_value = quantity2 % self._base_value()
+        return self.__class__(
+            normalize_scalar(result_value),
+            normalize_result_unit(result_unit),
+        )
 
     def __divmod__(self, quantity2: object) -> tuple["Quantity", "Quantity"]:
         return self.__floordiv__(quantity2), self.__mod__(quantity2)
@@ -163,7 +294,12 @@ class Quantity:
             )
         if self.is_unitless:
             return self.__class__(self.value ** exponent, self.unit)
-        return self.__class__(self.value ** exponent, self.unit ** exponent)
+        result_unit = self.unit ** exponent
+        result_value = self._base_value() ** exponent
+        return self.__class__(
+            normalize_scalar(result_value),
+            normalize_result_unit(result_unit),
+        )
 
     def __neg__(self) -> "Quantity":
         return self.__class__(-self.value, self.unit)
@@ -213,6 +349,84 @@ def complex_quantity(quantity: Quantity) -> Quantity:
     """Convert a quantity value to complex while preserving its unit."""
     require_quantity_operand(quantity, "complex conversion")
     return Quantity(complex(quantity.value), quantity.unit)
+
+
+def convert(quantity: Quantity, target_unit: BaseUnit) -> Quantity:
+    """
+    Convert a quantity to a compatible scale-only target unit.
+
+    Args:
+        quantity: Quantity to convert.
+        target_unit: Unit definition with the same dimension.
+
+    Returns:
+        Quantity expressed in ``target_unit``.
+
+    Raises:
+        UnitOperandError: If ``quantity`` is not a Quantity.
+        InvalidUnitError: If ``target_unit`` is not a unit definition.
+        UnitCompatibilityError: If conversion is not scale-only compatible.
+    """
+    require_quantity_operand(quantity, "conversion")
+    return quantity.to(target_unit)
+
+
+def value(quantity: Quantity) -> Scalar:
+    """
+    Return the numeric value of a quantity without converting it.
+
+    Args:
+        quantity: Quantity to inspect.
+
+    Returns:
+        Numeric value stored on the quantity.
+
+    Raises:
+        UnitOperandError: If ``quantity`` is not a Quantity.
+    """
+    require_quantity_operand(quantity, "value extraction")
+    return quantity.value
+
+
+def unit(quantity: Quantity) -> BaseUnit:
+    """
+    Return the unit definition of a quantity.
+
+    Args:
+        quantity: Quantity to inspect.
+
+    Returns:
+        Unit definition stored on the quantity.
+
+    Raises:
+        UnitOperandError: If ``quantity`` is not a Quantity.
+    """
+    require_quantity_operand(quantity, "unit extraction")
+    return quantity.unit
+
+
+def multiplier(quantity_or_unit: Quantity | BaseUnit) -> float:
+    """
+    Return the multiplicative factor to the canonical base dimension.
+
+    Args:
+        quantity_or_unit: Quantity or unit definition to inspect.
+
+    Returns:
+        Multiplicative factor for the unit carried by the input.
+
+    Raises:
+        UnitOperandError: If the input is neither Quantity nor BaseUnit.
+    """
+    if isinstance(quantity_or_unit, Quantity):
+        return quantity_or_unit.unit.conversion_factor
+    if isinstance(quantity_or_unit, BaseUnit):
+        return quantity_or_unit.conversion_factor
+    raise UnitOperandError(
+        "unsupported operand for multiplier extraction: {}".format(
+            type(quantity_or_unit).__name__
+        )
+    )
 
 
 def int_unit(quantity: Quantity) -> Quantity:
