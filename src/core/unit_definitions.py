@@ -62,6 +62,53 @@ def validate_conversion_support(supports_conversion: object) -> bool:
     return supports_conversion
 
 
+def validate_display_exponents(
+    display_exponents: Mapping[str, int] | None,
+) -> Mapping[str, int] | None:
+    """Validate optional display-unit exponent metadata."""
+    if display_exponents is None:
+        return None
+    validated_exponents: dict[str, int] = {}
+    for symbol, exponent in display_exponents.items():
+        if not isinstance(symbol, str):
+            raise InvalidValueError(
+                "display unit symbols must be strings, got {}".format(
+                    type(symbol).__name__
+                )
+            )
+        if not isinstance(exponent, int) or isinstance(exponent, bool):
+            raise InvalidValueError(
+                "display unit exponents must be integers, got {}".format(
+                    type(exponent).__name__
+                )
+            )
+        if exponent != 0:
+            validated_exponents[symbol] = exponent
+    return MappingProxyType(validated_exponents)
+
+
+def validate_conversion_offset(conversion_offset: object) -> float:
+    """Validate an affine conversion offset and return it as float."""
+    if not isinstance(conversion_offset, Real) or isinstance(conversion_offset, bool):
+        raise InvalidValueError(
+            "conversion offset must be a real scalar, got {}".format(
+                type(conversion_offset).__name__
+            )
+        )
+    return float(conversion_offset)
+
+
+def validate_affine_conversion_support(
+    conversion_offset: float,
+    supports_conversion: bool,
+) -> None:
+    """Raise when an affine unit is incorrectly marked multiplicative."""
+    if conversion_offset != 0.0 and supports_conversion:
+        raise InvalidValueError(
+            "units with nonzero conversion offsets cannot support multiplicative arithmetic"
+        )
+
+
 def clone_unit(unit: "BaseUnit | None") -> "BaseUnit":
     """Clone a unit definition while preserving its type."""
     if unit is None:
@@ -72,11 +119,15 @@ def clone_unit(unit: "BaseUnit | None") -> "BaseUnit":
         cloned_unit = unit.__class__(
             dimension=unit.dimension,
             conversion_factor=unit.conversion_factor,
+            conversion_offset=unit.conversion_offset,
+            display_exponents=unit.display_exponents,
             supports_multiplicative_conversion=unit.supports_multiplicative_conversion,
         )
     except TypeError:
         cloned_unit = unit.__class__(dimension=unit.dimension)
         cloned_unit._conversion_factor = unit.conversion_factor
+        cloned_unit._conversion_offset = unit.conversion_offset
+        cloned_unit._display_exponents = unit.display_exponents
         cloned_unit._supports_multiplicative_conversion = (
             unit.supports_multiplicative_conversion
         )
@@ -93,6 +144,77 @@ def resolve_unit(dimension: Dimension) -> "BaseUnit":
     return BaseUnit(dimension=dimension)
 
 
+def unit_display_exponents(unit: "BaseUnit") -> Mapping[str, int] | None:
+    """Return display exponent metadata for a unit when available."""
+    if isinstance(unit, DerivedUnit) and unit.name:
+        return {unit.name: 1}
+    if unit.display_exponents:
+        return unit.display_exponents
+    display_exponents = {
+        symbol: exponent
+        for symbol, exponent in zip(unit.dimension.system.symbols, unit.dimension.exponents)
+        if exponent != 0
+    }
+    if not display_exponents:
+        return None
+    return MappingProxyType(display_exponents)
+
+
+def combine_display_exponents(
+    left: "BaseUnit",
+    right: "BaseUnit",
+    operator_name: str,
+) -> Mapping[str, int] | None:
+    """Compose display exponent metadata for a product or quotient."""
+    left_exponents = unit_display_exponents(left)
+    right_exponents = unit_display_exponents(right)
+    if left_exponents is None and right_exponents is None:
+        return None
+    combined: dict[str, int] = {}
+    for symbol, exponent in (left_exponents or {}).items():
+        combined[symbol] = combined.get(symbol, 0) + exponent
+    sign = 1 if operator_name == "mul" else -1
+    for symbol, exponent in (right_exponents or {}).items():
+        combined[symbol] = combined.get(symbol, 0) + sign * exponent
+    return MappingProxyType(
+        {
+            symbol: exponent
+            for symbol, exponent in combined.items()
+            if exponent != 0
+        }
+    )
+
+
+def power_display_exponents(
+    unit: "BaseUnit",
+    exponent: int,
+) -> Mapping[str, int] | None:
+    """Return display exponent metadata for an exponentiated unit."""
+    display_exponents = unit_display_exponents(unit)
+    if display_exponents is None:
+        return None
+    return MappingProxyType(
+        {
+            symbol: value * exponent
+            for symbol, value in display_exponents.items()
+            if value * exponent != 0
+        }
+    )
+
+
+def render_display_exponents(display_exponents: Mapping[str, int] | None) -> str | None:
+    """Render optional display exponent metadata."""
+    if display_exponents is None:
+        return None
+    unit_string: list[str] = []
+    for symbol, exponent in display_exponents.items():
+        if exponent == 1:
+            unit_string.append(symbol)
+        else:
+            unit_string.append("{}^{}".format(symbol, exponent))
+    return "·".join(unit_string)
+
+
 class BaseUnit:
     """Base class for unit definitions."""
 
@@ -102,6 +224,9 @@ class BaseUnit:
         self,
         dimension: Dimension | None = None,
         conversion_factor: float = 1.0,
+        conversion_offset: float = 0.0,
+        display_exponents: Mapping[str, int] | None = None,
+        display_name: str | None = None,
         supports_multiplicative_conversion: bool = True,
     ) -> None:
         self._dimension = dimension or Dimension(
@@ -109,9 +234,18 @@ class BaseUnit:
             exponents=(0,) * len(self.dimension_system.symbols),
         )
         self._conversion_factor = validate_conversion_factor(conversion_factor)
-        self._supports_multiplicative_conversion = validate_conversion_support(
+        self._conversion_offset = validate_conversion_offset(conversion_offset)
+        self._display_exponents = validate_display_exponents(
+            {display_name: 1} if display_name is not None else display_exponents
+        )
+        supports_conversion = validate_conversion_support(
             supports_multiplicative_conversion
         )
+        validate_affine_conversion_support(
+            self._conversion_offset,
+            supports_conversion,
+        )
+        self._supports_multiplicative_conversion = supports_conversion
 
     @property
     def unit_dict(self) -> Dict[str, int]:
@@ -137,6 +271,26 @@ class BaseUnit:
         return self._conversion_factor
 
     @property
+    def conversion_offset(self) -> float:
+        """Return the additive offset to this dimension's base unit."""
+        return self._conversion_offset
+
+    @property
+    def display_exponents(self) -> Mapping[str, int] | None:
+        """Return display exponents for anonymous composite units."""
+        return self._display_exponents
+
+    @property
+    def display_name(self) -> str | None:
+        """Return an explicit display name for single-symbol anonymous units."""
+        if self._display_exponents is None or len(self._display_exponents) != 1:
+            return None
+        symbol, exponent = next(iter(self._display_exponents.items()))
+        if exponent == 1:
+            return symbol
+        return None
+
+    @property
     def supports_multiplicative_conversion(self) -> bool:
         """Return whether this unit can use scale-only conversion."""
         return self._supports_multiplicative_conversion
@@ -147,6 +301,10 @@ class BaseUnit:
         if self.dimension != unit2.dimension:
             return False
         if self.conversion_factor != unit2.conversion_factor:
+            return False
+        if self.conversion_offset != unit2.conversion_offset:
+            return False
+        if self.display_exponents != unit2.display_exponents:
             return False
         if isinstance(self, DerivedUnit) or isinstance(unit2, DerivedUnit):
             return (
@@ -179,10 +337,19 @@ class BaseUnit:
             self.supports_multiplicative_conversion
             and unit2.supports_multiplicative_conversion
         )
+        if not supports_conversion:
+            raise UnitCompatibilityError(
+                "units cannot be combined multiplicatively: {} and {}".format(
+                    self,
+                    unit2,
+                )
+            )
+        display_exponents = combine_display_exponents(self, unit2, operator_name)
         if dimension.system != SI_DIMENSION_SYSTEM:
             return self.__class__(
                 dimension=dimension,
                 conversion_factor=conversion_factor,
+                display_exponents=display_exponents,
                 supports_multiplicative_conversion=supports_conversion,
             )
         if supports_conversion and conversion_factor == 1.0:
@@ -190,13 +357,19 @@ class BaseUnit:
         return BaseUnit(
             dimension=dimension,
             conversion_factor=conversion_factor,
+            display_exponents=display_exponents,
             supports_multiplicative_conversion=supports_conversion,
         )
 
     def _quantity_from_scalar(self, value: Number) -> object:
         from core.quantity import Quantity, normalize_scalar
 
-        if not isinstance(self, DerivedUnit) and self.conversion_factor != 1.0:
+        if (
+            not isinstance(self, DerivedUnit)
+            and self.conversion_factor != 1.0
+            and self.conversion_offset == 0.0
+            and self.supports_multiplicative_conversion
+        ):
             try:
                 unit = self.__class__(
                     dimension=self.dimension,
@@ -209,6 +382,7 @@ class BaseUnit:
                 unit._supports_multiplicative_conversion = (
                     self.supports_multiplicative_conversion
                 )
+                unit._conversion_offset = self.conversion_offset
             result_value = value * self.conversion_factor
             if self.conversion_factor.is_integer():
                 result_value = normalize_scalar(result_value)
@@ -248,6 +422,10 @@ class BaseUnit:
             exponents=tuple(value * exponent for value in self.dimension.exponents),
         )
         conversion_factor = self.conversion_factor**exponent
+        if not self.supports_multiplicative_conversion:
+            raise UnitCompatibilityError(
+                "unit cannot be raised to a power: {}".format(self)
+            )
         if (
             isinstance(self, DerivedUnit)
             and self.name
@@ -267,6 +445,7 @@ class BaseUnit:
             return self.__class__(
                 dimension=dimension,
                 conversion_factor=conversion_factor,
+                display_exponents=power_display_exponents(self, exponent),
                 supports_multiplicative_conversion=(
                     self.supports_multiplicative_conversion
                 ),
@@ -276,10 +455,14 @@ class BaseUnit:
         return BaseUnit(
             dimension=dimension,
             conversion_factor=conversion_factor,
+            display_exponents=power_display_exponents(self, exponent),
             supports_multiplicative_conversion=self.supports_multiplicative_conversion,
         )
 
     def __str__(self) -> str:
+        display_name = render_display_exponents(self.display_exponents)
+        if display_name is not None:
+            return display_name
         return self.dimension.render()
 
 
@@ -292,6 +475,7 @@ class SIUnit(BaseUnit):
         key: str,
         value: int = 1,
         conversion_factor: float = 1.0,
+        conversion_offset: float = 0.0,
     ) -> "SIUnit":
         """Define an SI unit or exponentiated SI dimension."""
         if key not in cls.dimension_system.symbols:
@@ -303,6 +487,7 @@ class SIUnit(BaseUnit):
         return cls(
             dimension=Dimension.from_mapping({key: value}, system=cls.dimension_system),
             conversion_factor=conversion_factor,
+            conversion_offset=conversion_offset,
         )
 
 
@@ -317,6 +502,7 @@ class CustomUnitBase(BaseUnit):
         key: str,
         value: int = 1,
         conversion_factor: float = 1.0,
+        conversion_offset: float = 0.0,
     ) -> "CustomUnitBase":
         """Define a custom base unit within the subclass dimension system."""
         if key not in cls.dimension_system.symbols:
@@ -328,6 +514,7 @@ class CustomUnitBase(BaseUnit):
         return cls(
             dimension=Dimension.from_mapping({key: value}, system=cls.dimension_system),
             conversion_factor=conversion_factor,
+            conversion_offset=conversion_offset,
         )
 
 
@@ -358,6 +545,7 @@ class DerivedUnit(BaseUnit):
         name: str,
         unit: BaseUnit,
         conversion_factor: float | None = None,
+        conversion_offset: float | None = None,
         supports_multiplicative_conversion: bool | None = None,
     ) -> "DerivedUnit":
         """Define a named derived unit."""
@@ -368,6 +556,11 @@ class DerivedUnit(BaseUnit):
                 unit.conversion_factor
                 if conversion_factor is None
                 else conversion_factor
+            ),
+            conversion_offset=(
+                unit.conversion_offset
+                if conversion_offset is None
+                else conversion_offset
             ),
             supports_multiplicative_conversion=(
                 unit.supports_multiplicative_conversion

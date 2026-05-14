@@ -32,6 +32,7 @@ henry = DerivedUnit.define("H", weber / ampere)
 degree_celcius = DerivedUnit.define(
     "°C",
     kelvin,
+    conversion_offset=273.15,
     supports_multiplicative_conversion=False,
 )
 lumen = DerivedUnit.define("lm", candela * steradian)
@@ -46,10 +47,12 @@ centimetre = DerivedUnit.define("cm", metre, conversion_factor=0.01)
 millimetre = DerivedUnit.define("mm", metre, conversion_factor=0.001)
 micrometre = DerivedUnit.define("µm", metre, conversion_factor=0.000001)
 nanometre = DerivedUnit.define("nm", metre, conversion_factor=0.000000001)
+picometre = DerivedUnit.define("pm", metre, conversion_factor=0.000000000001)
 
 gram = DerivedUnit.define("g", kilogram, conversion_factor=0.001)
 milligram = DerivedUnit.define("mg", kilogram, conversion_factor=0.000001)
 microgram = DerivedUnit.define("µg", kilogram, conversion_factor=0.000000001)
+picogram = DerivedUnit.define("pg", kilogram, conversion_factor=0.000000000000001)
 tonne = DerivedUnit.define("t", kilogram, conversion_factor=1000.0)
 
 minute = DerivedUnit.define("min", second, conversion_factor=60.0)
@@ -57,6 +60,7 @@ hour = DerivedUnit.define("h", second, conversion_factor=3600.0)
 millisecond = DerivedUnit.define("ms", second, conversion_factor=0.001)
 microsecond = DerivedUnit.define("µs", second, conversion_factor=0.000001)
 nanosecond = DerivedUnit.define("ns", second, conversion_factor=0.000000001)
+picosecond = DerivedUnit.define("ps", second, conversion_factor=0.000000000001)
 
 milliampere = DerivedUnit.define("mA", ampere, conversion_factor=0.001)
 kiloampere = DerivedUnit.define("kA", ampere, conversion_factor=1000.0)
@@ -125,6 +129,9 @@ __all__ = [
     "newton",
     "ohm",
     "pascal",
+    "picogram",
+    "picometre",
+    "picosecond",
     "radian",
     "second",
     "siemens",

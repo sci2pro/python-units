@@ -47,6 +47,9 @@ from units import (
     newton,
     ohm,
     pascal,
+    picogram,
+    picometre,
+    picosecond,
     radian,
     second,
     siemens,
@@ -276,17 +279,22 @@ def test_explicit_multiplicative_conversions() -> None:
     assert str((1500 * gram).to(kilogram)) == "1.5 kg"
     assert str((12 * millimetre).to(centimetre)) == "1.2 cm"
     assert str((500000000 * nanometre).to(metre)) == "0.5 m"
+    assert str((1000000000000 * picometre).to(metre)) == "1 m"
+    assert str((1000000000000 * picosecond).to(second)) == "1 s"
+    assert str((1000000000000000 * picogram).to(kilogram)) == "1 kg"
 
 
 def test_conversion_requires_compatible_units() -> None:
     with pytest.raises(UnitCompatibilityError):
         (1 * metre).to(second)
-    with pytest.raises(UnitCompatibilityError):
-        (20 * degree_celcius).to(kelvin)
     with pytest.raises(InvalidUnitError):
         (1 * metre).to("metre")
     with pytest.raises(InvalidValueError):
         DerivedUnit.define("bad", metre, conversion_factor=0)
+    with pytest.raises(InvalidValueError):
+        DerivedUnit.define("bad", metre, conversion_offset=True)
+    with pytest.raises(InvalidValueError):
+        DerivedUnit.define("bad", metre, conversion_offset=1.0)
     with pytest.raises(InvalidValueError):
         DerivedUnit.define(
             "bad",
@@ -306,6 +314,49 @@ def test_scaled_unit_arithmetic_uses_base_magnitudes() -> None:
     assert str((2 * kilometre) ** 2) == "4000000 m^2"
     speed = (72 * kilometre) / (2 * hour)
     assert str(speed) == "10.0 m·s^-1"
+
+
+def test_affine_temperature_conversions_are_explicit() -> None:
+    from units.imperial import fahrenheit
+
+    assert str((0 * degree_celcius).to(kelvin)) == "273.15 K"
+    assert str((273.15 * kelvin).to(degree_celcius)) == "0 °C"
+    assert str((32 * fahrenheit).to(degree_celcius)) == "0 °C"
+    assert str((100 * degree_celcius).to(fahrenheit)) == "212 °F"
+    assert str(convert(32 * fahrenheit, kelvin)) == "273.15 K"
+
+    with pytest.raises(UnitCompatibilityError):
+        (20 * degree_celcius) * second
+    with pytest.raises(UnitCompatibilityError):
+        (20 * degree_celcius) * 2
+    with pytest.raises(UnitCompatibilityError):
+        (20 * degree_celcius) / 2
+    with pytest.raises(UnitCompatibilityError):
+        (20 * degree_celcius) // 2
+    with pytest.raises(UnitCompatibilityError):
+        (20 * degree_celcius) % 2
+    with pytest.raises(UnitCompatibilityError):
+        degree_celcius * second
+    with pytest.raises(UnitCompatibilityError):
+        degree_celcius**2
+
+
+def test_imperial_length_mass_and_speed_conversions() -> None:
+    from units.imperial import foot, inch, mile, ounce, pound, yard
+
+    assert str((12 * inch).to(foot)) == "1 ft"
+    assert str((3 * foot).to(yard)) == "1 yd"
+    assert str((1 * mile).to(kilometre)) == "1.609344 km"
+    assert str((16 * ounce).to(pound)) == "1 lb"
+    assert str((1 * pound).to(gram)) == "453.59237 g"
+    assert str(convert(60 * (mile / hour), kilometre / hour)) == "96.56064 km·h^-1"
+    assert str(convert(30 * kilometre / hour, kilometre / hour)) == "30 km·h^-1"
+
+
+def test_structured_composite_unit_display() -> None:
+    assert str(metre / (kilometre / hour)) == "m·km^-1·h"
+    assert str((kilometre / hour) ** 2) == "km^2·h^-2"
+    assert str(kilometre * kilometre) == "km^2"
 
 
 def test_scaled_unit_only_expressions_preserve_magnitudes() -> None:

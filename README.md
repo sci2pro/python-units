@@ -2,7 +2,7 @@
 
 [![badge.fury.io](https://badge.fury.io/py/python-units.svg)](https://badge.fury.io/py/python-units)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://pypi.org/project/python-units/)
-[![Coverage 92%](https://img.shields.io/badge/coverage-92%25-brightgreen.svg)](/Users/paulkorir/PycharmProjects/python-units/tests/unit/test_units.py)
+[![Coverage 100%](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](/Users/paulkorir/PycharmProjects/python-units/tests/unit/test_units.py)
 
 # The Price of Unitless Arithmetic
 
@@ -66,7 +66,8 @@ Source: https://en.wikipedia.org/wiki/Mars_Climate_Orbiter
 - a `Quantity` type that combines numeric values with unit information
 - a registry of SI base and derived units
 - algebraic unit manipulation and compatibility checks
-- explicit multiplicative conversions between compatible units
+- explicit multiplicative and affine conversions between compatible units
+- common imperial and US customary units in `units.imperial`
 - a public API that prioritizes scalar-by-unit construction and SI unit imports
 - a migration path from the legacy `Unit` constructor and compatibility helpers
 - a Python 3-only codebase with no Python 2 compatibility shims
@@ -192,6 +193,7 @@ Canonical unit imports:
 * `from units.si import metre, second, newton`
 * prefixed and scaled units such as `kilometre`, `centimetre`, `gram`,
   `minute`, `hour`, `kilowatt`, and `millivolt`
+* `from units.imperial import inch, foot, yard, mile, ounce, pound, fahrenheit`
 
 Legacy compatibility helpers:
 
@@ -213,12 +215,14 @@ deprecated compatibility paths are scheduled for removal in `1.0.0`.
 
 * Addition and subtraction require identical units.
 * Multiplication and division combine units algebraically.
-* Explicit scale-only conversions are available through `quantity.to(unit)` and
+* Explicit conversions are available through `quantity.to(unit)` and
   `convert(quantity, unit)`.
+* Scale-only conversions cover prefixed SI and imperial units.
+* Affine conversions cover Celsius, Fahrenheit, and kelvin.
 * Integer powers of units and unit-bearing quantities are supported.
 * Unitless quantities are supported explicitly.
-* Affine conversions, such as `degree_celcius <-> kelvin`, are intentionally not
-  implemented yet.
+* Affine units such as Celsius and Fahrenheit are blocked from multiplicative
+  arithmetic because offsets make those operations ambiguous.
 * The core quantity model allows signed values. Domain-specific constraints such
   as non-negative lengths should be enforced by higher-level types or validators.
 
@@ -247,9 +251,92 @@ print(unit(distance))               # km
 print(multiplier(kilometre))        # 1000.0
 ```
 
-The conversion model is scale-only in this release. Celsius is a named
-temperature unit, but converting between Celsius and kelvin requires an offset
-and is reserved for a later affine-conversion release.
+`0.5.0` extends conversion to affine temperature units and common imperial
+units. Conversion still never happens silently during addition or subtraction;
+you choose the target unit.
+
+# 0.5.0 examples
+
+The `0.5.0` release adds three practical conversion capabilities: affine
+temperature conversion, imperial units, and familiar composite display units.
+
+```python
+from units import convert
+from units.imperial import fahrenheit, foot, mile, pound
+from units.si import (
+    degree_celcius,
+    gram,
+    hour,
+    kelvin,
+    kilometre,
+    metre,
+    picometre,
+)
+
+# Affine conversions include the offset.
+print(convert(0 * degree_celcius, kelvin))       # 273.15 K
+print(convert(32 * fahrenheit, degree_celcius))  # 0 °C
+
+# Imperial units convert explicitly into SI or familiar metric units.
+print(convert(3 * foot, metre))                  # 0.9144 m
+print(convert(1 * pound, gram))                  # 453.59237 g
+
+# Composite target units preserve the display unit you ask for.
+speed = 60 * mile / hour
+print(convert(speed, kilometre / hour))          # 96.56064 km·h^-1
+
+# Pico-prefixed units are part of the prefixed SI set.
+print(convert(1000000000000 * picometre, metre)) # 1 m
+```
+
+The same strict arithmetic rules still apply. Compatible conversion is explicit;
+addition and subtraction still require identical units.
+
+# Affine temperature conversions
+
+Temperature scales such as Celsius and Fahrenheit require an offset. These are
+supported through explicit conversion:
+
+```python
+from units import convert
+from units.imperial import fahrenheit
+from units.si import degree_celcius, kelvin
+
+print(convert(0 * degree_celcius, kelvin))       # 273.15 K
+print(convert(32 * fahrenheit, degree_celcius))  # 0 °C
+print((100 * degree_celcius).to(fahrenheit))     # 212 °F
+```
+
+Affine units are not allowed in multiplicative arithmetic:
+
+```python
+from units.si import degree_celcius, second
+
+temperature = 20 * degree_celcius
+temperature * second
+# UnitCompatibilityError: units cannot be combined multiplicatively: °C and s
+```
+
+This is deliberate. Absolute temperatures and temperature intervals are
+different semantic concepts; constrained semantic types are planned for a later
+release.
+
+# Imperial and US customary units
+
+Common non-SI units live in `units.imperial`:
+
+```python
+from units import convert
+from units.imperial import foot, mile, pound
+from units.si import gram, hour, kilometre, metre
+
+print(convert(3 * foot, metre))              # 0.9144 m
+print(convert(1 * mile, kilometre))          # 1.609344 km
+print(convert(1 * pound, gram))              # 453.59237 g
+
+speed = 60 * mile / hour
+print(convert(speed, kilometre / hour))      # 96.56064 km·h^-1
+```
 
 # Prefixed and scaled units
 
@@ -276,6 +363,9 @@ from units.si import (
     minute,
     nanometre,
     nanosecond,
+    picogram,
+    picometre,
+    picosecond,
     tonne,
 )
 ```
@@ -298,8 +388,7 @@ print(speed)                        # 10.0 m·s^-1
 # Familiar composite units
 
 Composite unit expressions such as `kilometre / hour` are algebraic unit
-definitions. They carry the correct scale factor, but anonymous composite units
-render in canonical SI base form:
+definitions. Direct arithmetic renders in canonical SI base form:
 
 ```python
 from units.si import hour, kilometre
@@ -308,8 +397,8 @@ speed = 30 * kilometre / hour
 print(speed)                        # 8.333333333333334 m·s^-1
 ```
 
-When you want a semantically familiar display unit, give that composite unit an
-explicit name and convert to it:
+When you want a semantically familiar display unit, convert to that composite
+unit or give it an explicit name:
 
 ```python
 from units import DerivedUnit, convert
@@ -318,6 +407,7 @@ from units.si import hour, kilometre
 kilometres_per_hour = DerivedUnit.define("km·hr^-1", kilometre / hour)
 
 speed = 30 * kilometre / hour
+print(convert(speed, kilometre / hour))      # 30 km·h^-1
 print(convert(speed, kilometres_per_hour))  # 30 km·hr^-1
 print(30 * kilometres_per_hour)             # 30 km·hr^-1
 ```

@@ -2,7 +2,7 @@
 
 import pytest
 
-from core.quantity import Quantity, normalize_result_unit
+from core.quantity import Quantity, format_scalar, normalize_result_unit, normalize_scalar
 from core.unit_definitions import BaseUnit, CustomUnitBase, DerivedUnit, clone_unit
 from models.dimension import Dimension, DimensionSystem
 from units import metre, second
@@ -80,6 +80,54 @@ def test_unit_property_setters_and_comparisons_are_explicit() -> None:
     assert str(unit) == "s"
     assert unit != object()
     assert metre != BaseUnit(dimension=metre.dimension, conversion_factor=2.0)
+    assert BaseUnit(dimension=metre.dimension, display_name="x") != BaseUnit(
+        dimension=metre.dimension,
+        display_name="y",
+    )
+
+
+def test_anonymous_display_names_are_preserved_for_explicit_units() -> None:
+    named = BaseUnit(
+        dimension=metre.dimension,
+        conversion_factor=2.0,
+        display_name="length",
+    )
+    dimensionless = BaseUnit()
+
+    assert str(named) == "length"
+    assert str(named / dimensionless) == "length"
+    assert str((named * second) ** 1) == "length·s"
+    assert str(BaseUnit(conversion_factor=2.0) ** 2) == ""
+    assert BaseUnit(display_name="length").display_name == "length"
+    assert (BaseUnit(display_name="length", conversion_factor=2.0) ** 2).display_name is None
+    assert (named * second).display_name is None
+    assert normalize_scalar(complex(1, 2)) == complex(1, 2)
+    assert format_scalar(29.9999999999999) == "30"
+    assert (BaseUnit(conversion_factor=2.0) / BaseUnit(conversion_factor=3.0)).display_exponents is None
+
+    with pytest.raises(InvalidValueError):
+        BaseUnit(display_exponents={1: 1})
+    with pytest.raises(InvalidValueError):
+        BaseUnit(display_exponents={"x": 1.5})
+
+
+def test_direct_affine_base_unit_scalar_construction_preserves_metadata() -> None:
+    affine = BaseUnit(
+        dimension=metre.dimension,
+        conversion_factor=2.0,
+        conversion_offset=1.0,
+        display_name="affine-length",
+        supports_multiplicative_conversion=False,
+    )
+
+    quantity = 3 * affine
+
+    assert quantity.value == 3
+    assert quantity.unit.conversion_factor == 2.0
+    assert quantity.unit.conversion_offset == 1.0
+    assert quantity.unit.display_name == "affine-length"
+    assert not quantity.unit.supports_multiplicative_conversion
+    assert str(quantity) == "3 affine-length"
 
 
 def test_unit_invalid_operand_edges() -> None:

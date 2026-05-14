@@ -2,6 +2,42 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0] - 2026-05-14
+
+### Release notes
+
+`0.5.0` adds affine and cross-system conversions. The release supports explicit
+temperature conversions with offsets, introduces a small `units.imperial`
+namespace, and preserves familiar composite target-unit rendering for explicit
+conversions such as `mile / hour -> kilometre / hour`.
+
+### Added
+
+- Affine conversion metadata on unit definitions.
+- Explicit Celsius, Fahrenheit, and Kelvin conversions through
+  `Quantity.to(...)` and `convert(...)`.
+- `units.imperial` with:
+  - length: `inch`, `foot`, `yard`, `mile`
+  - mass: `ounce`, `pound`
+  - temperature: `fahrenheit`
+- Display labels for anonymous composite target units, so explicit conversions
+  can render in requested units such as `km·h^-1`.
+
+### Changed
+
+- `degree_celcius` now converts explicitly to and from `kelvin`.
+- Affine units are rejected from multiplicative arithmetic where offsets would
+  make the result ambiguous.
+- Near-integer and near-decimal float noise is cleaned up during rendering
+  without changing stored numeric values.
+- Bumped the package version to `0.5.0`.
+
+### Compatibility
+
+- Addition, subtraction, and modulo still require identical units.
+- Deprecated compatibility helpers remain available with `DeprecationWarning`.
+- `Unit is Quantity` remains true until the planned `1.0.0` breaking release.
+
 ## [0.4.0] - 2026-05-08
 
 ### Release notes
@@ -21,9 +57,11 @@ helpers while preserving the strict unit-compatibility rules for arithmetic.
   - `unit(quantity)`
   - `multiplier(quantity_or_unit)`
 - Common prefixed and scaled units:
-  - length: `kilometre`, `centimetre`, `millimetre`, `micrometre`, `nanometre`
-  - mass: `gram`, `milligram`, `microgram`, `tonne`
-  - time: `minute`, `hour`, `millisecond`, `microsecond`, `nanosecond`
+  - length: `kilometre`, `centimetre`, `millimetre`, `micrometre`, `nanometre`,
+    `picometre`
+  - mass: `gram`, `milligram`, `microgram`, `picogram`, `tonne`
+  - time: `minute`, `hour`, `millisecond`, `microsecond`, `nanosecond`,
+    `picosecond`
   - electrical and power units: `milliampere`, `kiloampere`, `millivolt`,
     `kilovolt`, `milliwatt`, `kilowatt`, `megawatt`
 

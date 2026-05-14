@@ -26,9 +26,29 @@ def require_quantity_operand(operand: object, operation: str) -> None:
 
 def normalize_scalar(value: Scalar) -> Scalar:
     """Return ``int`` for exact integer floats, otherwise return ``value``."""
-    if isinstance(value, float) and value.is_integer():
-        return int(value)
+    if isinstance(value, float):
+        nearest_integer = round(value)
+        if abs(value - nearest_integer) < 1e-12:
+            return int(nearest_integer)
     return value
+
+
+def format_scalar(value: Scalar) -> str:
+    """Render numeric values with minimal cleanup for binary-float noise."""
+    if isinstance(value, float):
+        if value.is_integer():
+            return str(value)
+        nearest_integer = round(value)
+        if abs(value - nearest_integer) < 1e-12:
+            return str(int(nearest_integer))
+        rounded_value = round(value, 12)
+        text = repr(value)
+        if (
+            abs(value - rounded_value) < 1e-12
+            and ("000000" in text or "999999" in text)
+        ):
+            return str(rounded_value)
+    return str(value)
 
 
 def normalize_product(value: Scalar, left: Scalar, right: Scalar) -> Scalar:
@@ -55,12 +75,14 @@ def normalize_result_unit(result_unit: BaseUnit) -> BaseUnit:
     try:
         return result_unit.__class__(
             dimension=result_unit.dimension,
+            conversion_offset=result_unit.conversion_offset,
             supports_multiplicative_conversion=(
                 result_unit.supports_multiplicative_conversion
             ),
         )
     except TypeError:
         unit = result_unit.__class__(dimension=result_unit.dimension)
+        unit._conversion_offset = result_unit.conversion_offset
         unit._supports_multiplicative_conversion = (
             result_unit.supports_multiplicative_conversion
         )
@@ -131,11 +153,21 @@ class Quantity:
             )
 
     def _base_value(self) -> Scalar:
+        self._require_multiplicative_unit("multiplicative arithmetic")
         return self.value * self.unit.conversion_factor
+
+    def _require_multiplicative_unit(self, operation: str) -> None:
+        if not self.unit.supports_multiplicative_conversion:
+            raise UnitCompatibilityError(
+                "unit cannot be used in {}: {}".format(operation, self.unit)
+            )
+
+    def _canonical_value(self) -> Scalar:
+        return self.value * self.unit.conversion_factor + self.unit.conversion_offset
 
     def to(self, target_unit: BaseUnit) -> "Quantity":
         """
-        Convert this quantity to a compatible scale-only target unit.
+        Convert this quantity to a compatible target unit.
 
         Args:
             target_unit: Unit definition with the same dimension.
@@ -145,26 +177,18 @@ class Quantity:
 
         Raises:
             InvalidUnitError: If ``target_unit`` is not a unit definition.
-            UnitCompatibilityError: If dimensions differ or either unit cannot
-                be converted with a multiplicative scale factor.
+            UnitCompatibilityError: If dimensions differ.
         """
         require_unit_instance(target_unit)
         if self.unit.dimension != target_unit.dimension:
             raise UnitCompatibilityError(
                 "cannot convert {} to {}".format(self.unit, target_unit)
             )
-        if (
-            not self.unit.supports_multiplicative_conversion
-            or not target_unit.supports_multiplicative_conversion
-        ):
-            raise UnitCompatibilityError(
-                "units require a non-multiplicative conversion: {} and {}".format(
-                    self.unit,
-                    target_unit,
-                )
-            )
         return self.__class__(
-            normalize_scalar(self._base_value() / target_unit.conversion_factor),
+            normalize_scalar(
+                (self._canonical_value() - target_unit.conversion_offset)
+                / target_unit.conversion_factor
+            ),
             target_unit,
         )
 
@@ -202,6 +226,7 @@ class Quantity:
                 normalize_result_unit(result_unit),
             )
         self._require_numeric_scalar(quantity2, "multiplication")
+        self._require_multiplicative_unit("multiplication")
         return self.__class__(self.value * quantity2, self.unit)
 
     def __rmul__(self, quantity2: object) -> "Quantity":
@@ -223,6 +248,7 @@ class Quantity:
                 normalize_result_unit(result_unit),
             )
         self._require_numeric_scalar(quantity2, "division")
+        self._require_multiplicative_unit("division")
         return self.__class__(self.value / quantity2, self.unit)
 
     def __rtruediv__(self, quantity2: object) -> "Quantity":
@@ -241,6 +267,7 @@ class Quantity:
             result_value = self._base_value() // quantity2._base_value()
             return self.__class__(result_value, normalize_result_unit(result_unit))
         self._require_real_scalar(quantity2, "floor division")
+        self._require_multiplicative_unit("floor division")
         return self.__class__(self.value // quantity2, self.unit)
 
     def __rfloordiv__(self, quantity2: object) -> "Quantity":
@@ -264,6 +291,7 @@ class Quantity:
             self._require_compatible_quantity(quantity2, "modulo")
             return self.__class__(self.value % quantity2.value, self.unit)
         self._require_real_scalar(quantity2, "modulo")
+        self._require_multiplicative_unit("modulo")
         return self.__class__(self.value % quantity2, self.unit)
 
     def __rmod__(self, quantity2: object) -> "Quantity":
@@ -320,7 +348,7 @@ class Quantity:
         raise TypeError("invalid conversion from Quantity object to float")
 
     def __str__(self) -> str:
-        return "{} {}".format(self.value, self.unit).strip()
+        return "{} {}".format(format_scalar(self.value), self.unit).strip()
 
 
 def int_quantity(quantity: Quantity) -> Quantity:
@@ -353,7 +381,7 @@ def complex_quantity(quantity: Quantity) -> Quantity:
 
 def convert(quantity: Quantity, target_unit: BaseUnit) -> Quantity:
     """
-    Convert a quantity to a compatible scale-only target unit.
+    Convert a quantity to a compatible target unit.
 
     Args:
         quantity: Quantity to convert.
@@ -365,7 +393,7 @@ def convert(quantity: Quantity, target_unit: BaseUnit) -> Quantity:
     Raises:
         UnitOperandError: If ``quantity`` is not a Quantity.
         InvalidUnitError: If ``target_unit`` is not a unit definition.
-        UnitCompatibilityError: If conversion is not scale-only compatible.
+        UnitCompatibilityError: If dimensions differ.
     """
     require_quantity_operand(quantity, "conversion")
     return quantity.to(target_unit)

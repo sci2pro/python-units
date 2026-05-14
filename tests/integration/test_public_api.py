@@ -38,4 +38,15 @@ def test_public_conversion_api() -> None:
     assert units.unit(distance) == units.kilometre
     assert unit_module(distance) == units.kilometre
     assert units.multiplier(units.kilometre) == 1000.0
+    assert units.multiplier(units.picometre) == 0.000000000001
     assert units_si.kilometre is units.kilometre
+    assert units_si.picosecond is units.picosecond
+
+
+def test_public_imperial_namespace() -> None:
+    from units.imperial import fahrenheit, foot, mile, pound
+
+    assert str(1 * mile) == "1 mi"
+    assert str((3 * foot).to(units.metre)) == "0.9144 m"
+    assert str((1 * pound).to(units.gram)) == "453.59237 g"
+    assert str((32 * fahrenheit).to(units.degree_celcius)) == "0 °C"

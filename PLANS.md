@@ -281,14 +281,15 @@ Completed in `0.4.0`:
   - method-based APIs such as `quantity.to(kilometre)`
   - helper-based APIs such as `convert(quantity, kilometre)`
 
-Remaining conversion roadmap:
+Completed in `0.5.0`:
 
 - affine conversions where offsets matter
   - `kelvin <-> degree_celcius`
 - additional named unit systems
   - imperial units such as `inch`, `foot`, `mile`, `pound`, `fahrenheit`
 
-This is now modeled explicitly with scale metadata on unit definitions. Future affine conversions should add offset metadata rather than relying on dimensional equivalence alone.
+This is now modeled explicitly with scale and offset metadata on unit
+definitions rather than relying on dimensional equivalence alone.
 
 ### Completed Phase 10 detail: extractor helpers
 
@@ -331,9 +332,9 @@ Non-goals for `0.4.0`:
 - large imperial coverage
 - aggressive deprecation of legacy API
 
-### 0.5.0: affine and cross-system conversions
+### Completed 0.5.0: affine and cross-system conversions
 
-Recommended scope:
+Completed scope:
 
 - support affine conversions such as `kelvin <-> degree_celcius`
 - add the first stable non-SI named conversions, especially commonly used imperial units
@@ -365,9 +366,8 @@ Recommended scope:
 
 The next implementation work should happen in this order:
 
-1. Phase 10B: affine and cross-system conversions
-2. Phase 10C: constrained semantic types
-3. `1.0.0`: remove or explicitly retain deprecated compatibility paths
+1. Phase 10C: constrained semantic types
+2. `1.0.0`: remove or explicitly retain deprecated compatibility paths
 
 ## Definition of Done For The Remaining Plan
 
