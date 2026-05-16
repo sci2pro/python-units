@@ -8,12 +8,13 @@ version = "0.5.0"
 description = "Python library to represent numbers with units"
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.10"
-license = "GPL-3.0-or-later"
+license = "Apache-2.0"
 authors = [
   { name = "Paul K. Korir, PhD", email = "paul.korir@gmail.com" },
 ]
 keywords = ["units"]
 classifiers = [
+  "License :: OSI Approved :: Apache Software License",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.10",
